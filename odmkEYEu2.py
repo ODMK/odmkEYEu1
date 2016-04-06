@@ -43,11 +43,45 @@ clear_all()
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
+# -----------------------------------------------------------------------------
+# utility func
+# -----------------------------------------------------------------------------
+
+def importAllJpg(srcDir):
+    ''' imports all .jpg files into Python mem from source directory.
+        srcDir should be Fullpath ending with "/" '''
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::Import all source img (.jpg) in a directory::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # generate list all files in a directory
+    imgSrcList = []
+    imgObjList = []
+
+    print('\nLoading source images from the following path:')
+    print(srcDir)
+
+    for filename in os.listdir(srcDir):
+        imgSrcList.append(filename)
+        imgPath = srcDir+filename
+        imgObjTemp = misc.imread(imgPath)
+        imgObjList.append(imgObjTemp)
+    imgCount = len(imgSrcList)
+    print('\nFound '+str(imgCount)+' images in the folder:\n')
+    print(imgSrcList)
+    print('\nCreated python lists:')
+    print('<<imgObjList>> (ndimage objects)')
+    print('<<imgSrcList>> (img names)\n')
+    print('// *--------------------------------------------------------------* //')
+
+    return [imgObjList, imgSrcList]
+
 def cyclicZn(n):
     ''' calculates the Zn roots of unity '''
-    cZn = np.zeros((n, 1))*(0+0j)    #column vector of zero complex values
+    cZn = np.zeros((n, 1))*(0+0j)    # column vector of zero complex values
     for k in range(n):
-        ##z(k) = e^(((k)*2*pi*1j)/n)        # Define cyclic group Zn points
+        # z(k) = e^(((k)*2*pi*1j)/n)        # Define cyclic group Zn points
         cZn[k] = np.cos(((k)*2*np.pi)/n) + np.sin(((k)*2*np.pi)/n)*1j   # Euler's identity
 
     return cZn
@@ -69,11 +103,13 @@ def randomIdx(n, k):
     for i in range(n):
         randIdx.append(round(random.random()*(k-1)))
     return randIdx
-    
-    
-#def reverseIdx(imgArray):
-    
 
+
+#def reverseIdx(imgArray):
+
+# -----------------------------------------------------------------------------
+# img Pre-processing func
+# -----------------------------------------------------------------------------
 
 def odmkEyePrint(img, title, idx):
     imgWidth = img.shape[1]
@@ -201,9 +237,9 @@ def odmkEyeDim(img, SzX, SzY):
         hdiff = imgHeight - SzY
         minDiff = min(wdiff, hdiff)
         if wdiff <= hdiff:
-            zoomFactor = (img3Width - minDiff) / img3Width
+            zoomFactor = (imgWidth - minDiff) / imgWidth
         else:
-            zoomFactor = (img3Height - minDiff) / img3Height
+            zoomFactor = (imgHeight - minDiff) / imgHeight
         # print('zoomFactor = '+str(zoomFactor))
         imgScaled = odmkEyeZoom(img, zoomFactor)
         # misc.imsave('imgSrc/exp1/myFirstKikDrumZOOM00001.jpg', imgScaled)
@@ -253,6 +289,85 @@ def odmkEyeDim(img, SzX, SzY):
         imgScaled = odmkEyeCrop(imgScaled, SzX, SzY)
 
     return imgScaled
+
+
+def odmkScaleAll(srcObjList, SzX, SzY, w, outDir='None', outName='None'):
+    ''' rescales and normalizes all .jpg files in image object list.
+        scales, zooms, & crops images to dimensions SzX, SzY
+        Assumes srcObjList of ndimage objects exists in program memory
+        Typically importAllJpg is run first.
+        if w == 1, write processed images to output directory'''
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::Rescale and Normalize All imgages in folder::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # check write condition, if w=0 ignore outDir
+    if w == 0 and outDir != 'None':
+        print('Warning: write = 0, outDir ignored')
+    if w == 1:
+        if outDir == 'None':
+            print('Error: outDir must be specified; processed img will not be saved')
+            w = 0
+        else:
+            # If Dir does not exist, makedir:
+            os.makedirs(outDir, exist_ok=True)
+    if outName != 'None':
+        imgScaledOutNm = outName
+    else:
+        imgScaledOutNm = 'odmkScaleAllOut'
+
+    imgScaledNmArray = []
+    imgScaledArray = []
+
+    imgCount = len(srcObjList)
+    # Find num digits required to represent max index
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    for k in range(imgCount):
+        imgScaled = odmkEyeDim(srcObjList[k], SzX, SzY)
+        # auto increment output file name
+        nextInc += 1
+        zr = ''    # reset lead-zero count to zero each itr
+        for j in range(n_digits - len(str(nextInc))):
+            zr += '0'
+        strInc = zr+str(nextInc)
+        imgScaledNm = imgScaledOutNm+strInc+'.jpg'
+        if w == 1:
+            imgScaledFull = outDir+imgScaledNm
+            misc.imsave(imgScaledFull, imgScaled)
+            print('Saved Scaled images to the following location:')
+            print(imgScaledFull)
+        imgScaledNmArray.append(imgScaledNm)
+        imgScaledArray.append(imgScaled)
+
+    print('\nScaled all images in the source directory\n')
+    print('Renamed files: "processScaled00X.jpg"')
+
+    print('\nCreated numpy arrays:')
+    print('<<imgScaledArray>> (img data objects)')
+    print('<<imgScaledNmArray>> (img names)\n')
+
+    print('\n')
+
+    print('// *--------------------------------------------------------------* //')
+
+    return [imgScaledArray, imgScaledNmArray]
+
+
+# -----------------------------------------------------------------------------
+# img Post-processing func
+# -----------------------------------------------------------------------------
+
+#def concatDir(dirList):
+
+
+
+
+# -----------------------------------------------------------------------------
+# ODMK img Pixel-Banging Algorithms
+# -----------------------------------------------------------------------------
+
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -342,11 +457,16 @@ print('// *--------------------------------------------------------------* //')
 print('// *---::Set Master Dimensions for output::---*')
 print('// *--------------------------------------------------------------* //')
 
-# Golden ration frame!
+# Golden ratio frames:
+mstrSzX = 1076
+mstrSzY = 666
+
 #mstrSzX = 1257
 #mstrSzY = 777
-mstrSzX = 1436
-mstrSzY = 888
+
+# likely good size for final output
+#mstrSzX = 1436
+#mstrSzY = 888
 print('\nOutput frame width = '+str(mstrSzX))
 print('Output frame Heigth = '+str(mstrSzY))
 
@@ -492,71 +612,85 @@ print('// *--------------------------------------------------------------* //')
 # ***TEMP - process img folder***
 # $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::Import all source img (.jpg) in a directory::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## generate list all files in a directory
+#processSrcList = []
+#processObjList = []
+#
+## path = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp1/'
+#path = rootDir+'process/'
+#print('\nLoading source images from the following path:')
+#print(path)
+#
+#for filename in os.listdir(path):
+#    processSrcList.append(filename)
+#    processPath = path+filename
+#    processObjTemp = misc.imread(processPath)
+#    processObjList.append(processObjTemp)
+#processCount = len(processSrcList)
+#print('\nFound '+str(processCount)+' images in the folder:\n')
+#print(processSrcList)
+#print('\nCreated numpy arrays:')
+#print('<<processObjList>> (img data objects) and <<processSrcList>> (img names)\n')
+#
+#print('// *--------------------------------------------------------------* //')
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::Rescale and Normalize All imgages in folder::---*')
-print('// *--------------------------------------------------------------* //')
+jpgSrcDir = rootDir+'process/'
 
-# generate list all files in a directory
-processSrcList = []
-processObjList = []
+[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
 
-# path = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp1/'
-path = rootDir+'process/'
-print('\nLoading source images from the following path:')
-print(path)
+gorgulanDir = rootDir+'gorgulanScale/'
 
-for filename in os.listdir(path):
-    processSrcList.append(filename)
-    processPath = path+filename
-    processObjTemp = misc.imread(processPath)
-    processObjList.append(processObjTemp)
-processCount = len(processSrcList)
-print('\nFound '+str(processCount)+' images in the folder:\n')
-print(processSrcList)
-print('\nCreated numpy arrays:')
-print('<<processObjList>> (img data objects) and <<processSrcList>> (img names)\n')
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
+[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir, outName='gorgulan')
 
-print('// *--------------------------------------------------------------* //')
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::Rescale and Normalize All imgages in folder::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## scale all img objects in processObjList
+#
+## Optional!: save all scaled images to dir
+#processScaledir = rootDir+'processScaled/'
+#
+## If Dir does not exist, makedir:
+#os.makedirs(processScaledir, exist_ok=True)
+#
+#processScaledNmArray = []
+#processScaledArray = []
+#
+## Find num digits required to represent max index
+#n_digits = int(ceil(np.log10(processCount))) + 2
+#nextInc = 0
+#for k in range(processCount):
+#    gzSTransc = odmkEyeDim(processObjList[k], mstrSzX, mstrSzY)
+#    # auto increment output file name
+#    nextInc += 1
+#    zr = ''    # reset lead-zero count to zero each itr
+#    for j in range(n_digits - len(str(nextInc))):
+#        zr += '0'
+#    strInc = zr+str(nextInc)
+#    gzScaledNm = 'processScaled'+strInc+'.jpg'
+#    gzScaledFull = processScaledir+gzScaledNm
+#    misc.imsave(gzScaledFull, gzSTransc)
+#    processScaledNmArray.append(gzScaledNm)
+#    processScaledArray.append(gzSTransc)
+#
+#print('\nScaled all images in the source directory\n')
+#print('Renamed files: "processScaled00X.jpg"')
 
-
-# scale all img objects in processObjList
-
-# Optional!: save all scaled images to dir
-processScaledir = rootDir+'processScaled/'
-
-# If Dir does not exist, makedir:
-os.makedirs(processScaledir, exist_ok=True)
-
-processScaledNmArray = []
-processScaledArray = []
-
-# Find num digits required to represent max index
-n_digits = int(ceil(np.log10(processCount))) + 2
-nextInc = 0
-for k in range(processCount):
-    gzSTransc = odmkEyeDim(processObjList[k], mstrSzX, mstrSzY)
-    # auto increment output file name
-    nextInc += 1
-    zr = ''    # reset lead-zero count to zero each itr
-    for j in range(n_digits - len(str(nextInc))):
-        zr += '0'
-    strInc = zr+str(nextInc)
-    gzScaledNm = 'processScaled'+strInc+'.jpg'
-    gzScaledFull = processScaledir+gzScaledNm
-    misc.imsave(gzScaledFull, gzSTransc)
-    processScaledNmArray.append(gzScaledNm)
-    processScaledArray.append(gzSTransc)
-
-print('\nScaled all images in the source directory\n')
-print('Renamed files: "processScaled00X.jpg"')
-
-print('\nCreated numpy arrays:')
+print('\nCreated python lists:')
 print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
 
-print('Saved Scaled images to the following location:')
-print(processScaledir)
+#print('Saved Scaled images to the following location:')
+#print(processScaledir)
 print('\n')
 
 print('// *--------------------------------------------------------------* //')
@@ -753,20 +887,27 @@ print('// *--------------------------------------------------------------* //')
 
 # iterate zoom out & overlay, zoom in & overlay
 
-# dir where processed img files are stored:
-imgTelescdir = rootDir+'exp1/'
-imgTelescNm = 'imgTelescopeOut'
-
-gzIdx = 2
-imgClone = gzScaledArray[gzIdx]
-imgCloneNm = gzScaledNmArray[gzIdx]
-
 # defined above!
 SzX = mstrSzX
 SzY = mstrSzY
 
+# num_img = 56
 num_img = 46
-inOrOut = 0    # telescope direction: 0 = in, 1 = out
+inOrOut = 0     # telescope direction: 0 = in, 1 = out
+hop_sz = 5      # number of pixels to scale img each iteration
+
+# dir where processed img files are stored:
+imgTelescdir = rootDir+'exp1/'
+if inOrOut == 0:
+    imgTelescNm = 'telescopeOut'
+else:
+    imgTelescNm = 'telescopeIn'
+
+# **temp? - selects a specific image from array, should be more generic***
+gzIdx = 2
+imgClone = gzScaledArray[gzIdx]
+imgCloneNm = gzScaledNmArray[gzIdx]
+
 
 imgTelescopeNmArray = []
 imgTelescopeArray = []
@@ -775,9 +916,9 @@ newDimX = SzX
 newDimY = SzY
 for i in range(num_img):
     if newDimX > 2:
-        newDimX -= 2
+        newDimX -= hop_sz
     if newDimY > 2:
-        newDimY -= 2
+        newDimY -= hop_sz
     # scale image to new dimensions
     imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
     # region = (left, upper, right, lower)
@@ -897,9 +1038,41 @@ print('// *--------------------------------------------------------------* //')
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
+# /////////////////////////////////////////////////////////////////////////////
+# #############################################################################
+# begin : img post-processing
+# #############################################################################
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+#loc1 = rootDir+'uCache/imgTelescopeIn1_1436x888_56x/'
+#loc2 = rootDir+'uCache/imgTelescopeIn2_1436x888_56x/'
+#loc3 = rootDir+'uCache/imgTelescopeIn3_1436x888_56x/'
+#loc4 = rootDir+'uCache/imgTelescopeIn4_1436x888_56x/'
+#
+#dirList = [loc1, loc2, loc3, loc4]
+#
+#imgConcatObjList = []
+#imgConcatSrcList = []
+#for j in len(dirList):
+#    [imgObjList, imgSrcList] = importAllJpg(dirList[j])
+#    tempLen = len(imgSrcList)
+#    # rename files with index offsets
+#    imgConcatObjList.append(imgObjList)
+#    imgConcatSrcList.append(imgSrcList)
+
+
+# /////////////////////////////////////////////////////////////////////////////
+# #############################################################################
+# end : img post-processing
+# #############################################################################
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+
 # // *---------------------------------------------------------------------* //
 
-plt.show()
+# plt.show()
 
 print('\n')
 print('// *--------------------------------------------------------------* //')
