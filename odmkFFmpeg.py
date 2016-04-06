@@ -63,28 +63,29 @@ print('// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ //')
 
 print('\n')
 print('// *--------------------------------------------------------------* //')
-print('// *---::Search for .jpg images in eyeDir directory::---*')
+print('// *---::Search for .jpg images in eyeSrcDir directory::---*')
 print('// *--------------------------------------------------------------* //')
 
-eyeDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp1/'
+eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp1/'
+# eyeOutDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/ffmpegOut/'
 
 # generate list all files in a directory
 imgSrcList = []
 try:
-    for filename in os.listdir(eyeDir):
-        if img.endswith('.jpg'):
+    for filename in os.listdir(eyeSrcDir):
+        if filename.endswith('.jpg'):
             imgSrcList.append(filename)
     if imgSrcList == []:
         print('\nError: No .jpg files found in directory\n')
     else:
         imgCount = len(imgSrcList)
-        print('\nFound '+str(imgCount)+' images in the eyeDir directory!')
+        print('\nFound '+str(imgCount)+' images in the eyeSrcDir directory!')
         eye_name = imgSrcList[0]
         eye_name = eye_name.split("00")[0]
         print('\nSet eye_name = "'+eye_name+'"')
         print('\nCreated numpy array: <<imgSrcList>>\n')
 except OSError:
-    print('\nError: directory:\n'+eyeDir+'\ncannot be found\n')
+    print('\nError: directory:\n'+eyeSrcDir+'\ncannot be found\n')
     
 print('// *--------------------------------------------------------------* //')
 
@@ -96,7 +97,7 @@ print('// *--------------------------------------------------------------* //')
 
 movie_name = eye_name+'.mpg'
 print('\nSet movie_name = '+movie_name)
-print('\nRunning ffmpeg... '+eyeName)
+print('\nRunning ffmpeg... '+eye_name)
 
 overwrite = True
 n_interpolation_frames = 1
@@ -111,7 +112,7 @@ fmt_str = eye_name+'%'+str(n_digits)+'d.jpg'
 movie_cmd = ["ffmpeg",
              '-an',  # no sound!
              '-r',  '%d' % frame_rate,
-             '-i', os.path.join(eyeDir, fmt_str),
+             '-i', os.path.join(eyeSrcDir, fmt_str),
              '-y' if overwrite else '-n',
              # '-vcodec', codec,
              '-b:v', bitrate,
