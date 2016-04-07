@@ -336,10 +336,12 @@ def odmkScaleAll(srcObjList, SzX, SzY, w, outDir='None', outName='None'):
         if w == 1:
             imgScaledFull = outDir+imgScaledNm
             misc.imsave(imgScaledFull, imgScaled)
-            print('Saved Scaled images to the following location:')
-            print(imgScaledFull)
         imgScaledNmArray.append(imgScaledNm)
         imgScaledArray.append(imgScaled)
+
+    if w == 1:    
+        print('Saved Scaled images to the following location:')
+        print(imgScaledFull)
 
     print('\nScaled all images in the source directory\n')
     print('Renamed files: "processScaled00X.jpg"')
@@ -359,9 +361,70 @@ def odmkScaleAll(srcObjList, SzX, SzY, w, outDir='None', outName='None'):
 # img Post-processing func
 # -----------------------------------------------------------------------------
 
-#def concatDir(dirList):
+def concatAllDir(dirList, w=0, concatDir='None', concatName='None'):
+    ''' Takes a list of directories containing .jpg images,
+        renames and concatenates all files into new output directory.
+        The new file names are formatted for processing with ffmpeg'''
 
+    # check write condition, if w=0 ignore outDir
+    if w == 0 and concatDir != 'None':
+        print('Warning: write = 0, outDir ignored')
+    if w == 1:
+        if concatDir == 'None':
+            print('Error: outDir must be specified; processed img will not be saved')
+            w = 0
+        else:
+            # If Dir does not exist, makedir:
+            os.makedirs(concatDir, exist_ok=True)
+    if concatName != 'None':
+        reName = concatName
+    else:
+        reName = 'imgConcat'
 
+    imgConcatObjList = []
+    imgConcatSrcList = []
+    imgCounttmp = 0
+    cntOffset = 0
+    for j in range(len(dirList)):
+        # load jth directory all files
+        [imgObjList, imgSrcList] = importAllJpg(dirList[j])
+        cntOffset += imgCounttmp
+        imgCounttmp = len(imgSrcList)
+        # replace current names with concat output name
+        n_digits = int(ceil(np.log10(imgCounttmp+cntOffset))) + 2
+        nextInc = cntOffset
+        for k in range(imgCounttmp):
+            nextInc += 1
+            zr = ''
+            for h in range(n_digits - len(str(nextInc))):
+                zr += '0'
+            strInc = zr+str(nextInc)
+            imgConcatNm = reName+strInc+'.jpg'
+            # append new name to imgConcatSrcList
+            imgConcatSrcList.append(imgSrcList[k].replace(imgSrcList[k], imgConcatNm))
+            imgConcatObjList.append(imgObjList[k])
+
+    # normalize image index n_digits to allow for growth
+    #pdb.set_trace()
+    imgCount = len(imgConcatSrcList)
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    for i in range(imgCount):
+        nextInc += 1
+        zr = ''
+        for j in range(n_digits - len(str(nextInc))):
+            zr += '0'
+        strInc = zr+str(nextInc)
+        # print('strInc = '+str(strInc))
+        imgNormalizeNm = reName+strInc+'.jpg'
+        # print('imgConcatSrcList[i] = '+str(imgConcatSrcList[i]))
+        imgConcatSrcList[i] = imgConcatSrcList[i].replace(imgConcatSrcList[i], imgNormalizeNm)
+        # print('imgConcatSrcList[i] = '+str(imgConcatSrcList[i]))
+        if w == 1:
+            imgScaledFull = concatDir+imgNormalizeNm
+            misc.imsave(imgScaledFull, imgConcatObjList[i])
+
+    return [imgConcatObjList, imgConcatSrcList]
 
 
 # -----------------------------------------------------------------------------
@@ -472,32 +535,32 @@ print('Output frame Heigth = '+str(mstrSzY))
 
 # // *---------------------------------------------------------------------* //
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::Rescale and Normalize All imgages in folder::---*')
-print('// *--------------------------------------------------------------* //')
-
-# generate list all files in a directory
-imgSrcList = []
-imgObjList = []
-
-# path = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp1/'
-path = rootDir+'eyeSrcExp1/'
-print('\nLoading source images from the following path:')
-print(path)
-
-for filename in os.listdir(path):
-    imgSrcList.append(filename)
-    imgPath = path+filename
-    imgObjTemp = misc.imread(imgPath)
-    imgObjList.append(imgObjTemp)
-imgCount = len(imgSrcList)
-print('\nFound '+str(imgCount)+' images in the folder:\n')
-print(imgSrcList)
-print('\nCreated numpy arrays:')
-print('<<imgObjList>> (img data objects) and <<imgSrcList>> (img names)\n')
-
-print('// *--------------------------------------------------------------* //')
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::Rescale and Normalize All imgages in folder::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## generate list all files in a directory
+#imgSrcList = []
+#imgObjList = []
+#
+## path = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp1/'
+#path = rootDir+'eyeSrcExp1/'
+#print('\nLoading source images from the following path:')
+#print(path)
+#
+#for filename in os.listdir(path):
+#    imgSrcList.append(filename)
+#    imgPath = path+filename
+#    imgObjTemp = misc.imread(imgPath)
+#    imgObjList.append(imgObjTemp)
+#imgCount = len(imgSrcList)
+#print('\nFound '+str(imgCount)+' images in the folder:\n')
+#print(imgSrcList)
+#print('\nCreated numpy arrays:')
+#print('<<imgObjList>> (img data objects) and <<imgSrcList>> (img names)\n')
+#
+#print('// *--------------------------------------------------------------* //')
 
 ## print an image object from the list
 ## odmkEyePrint(imgObjList[3], 'MFKD', 1)
@@ -514,44 +577,44 @@ print('// *--------------------------------------------------------------* //')
 ## gzTest = gz3
 #misc.imsave('imgSrc/exp1/testImgObjPrint.jpg', gzTest)
 
-# // *---------------------------------------------------------------------* //
-
-# scale all img objects in imgObjList
-
-# Optional!: save all scaled images to dir
-gzScaledir = rootDir+'expScaled/'
-
-gzScaledNmArray = []
-gzScaledArray = []
-
-# Find num digits required to represent max index
-n_digits = int(ceil(np.log10(imgCount))) + 2
-nextInc = 0
-for k in range(imgCount):
-    gzSTransc = odmkEyeDim(imgObjList[k], mstrSzX, mstrSzY)
-    # auto increment output file name
-    nextInc += 1
-    zr = ''    # reset lead-zero count to zero each itr
-    for j in range(n_digits - len(str(nextInc))):
-        zr += '0'
-    strInc = zr+str(nextInc)
-    gzScaledNm = 'gzScaled'+strInc+'.jpg'
-    gzScaledFull = gzScaledir+gzScaledNm
-    misc.imsave(gzScaledFull, gzSTransc)
-    gzScaledNmArray.append(gzScaledNm)
-    gzScaledArray.append(gzSTransc)
-
-print('\nScaled all images in the source directory\n')
-print('Renamed files: "gzScaled00X.jpg"')
-
-print('\nCreated numpy arrays:')
-print('<<gzScaledArray>> (img data objects) and <<gzScaledNmArray>> (img names)\n')
-
-print('Saved Scaled images to the following location:')
-print(gzScaledir)
-print('\n')
-
-print('// *--------------------------------------------------------------* //')
+## // *---------------------------------------------------------------------* //
+#
+## scale all img objects in imgObjList
+#
+## Optional!: save all scaled images to dir
+#gzScaledir = rootDir+'expScaled/'
+#
+#gzScaledNmArray = []
+#gzScaledArray = []
+#
+## Find num digits required to represent max index
+#n_digits = int(ceil(np.log10(imgCount))) + 2
+#nextInc = 0
+#for k in range(imgCount):
+#    gzSTransc = odmkEyeDim(imgObjList[k], mstrSzX, mstrSzY)
+#    # auto increment output file name
+#    nextInc += 1
+#    zr = ''    # reset lead-zero count to zero each itr
+#    for j in range(n_digits - len(str(nextInc))):
+#        zr += '0'
+#    strInc = zr+str(nextInc)
+#    gzScaledNm = 'gzScaled'+strInc+'.jpg'
+#    gzScaledFull = gzScaledir+gzScaledNm
+#    misc.imsave(gzScaledFull, gzSTransc)
+#    gzScaledNmArray.append(gzScaledNm)
+#    gzScaledArray.append(gzSTransc)
+#
+#print('\nScaled all images in the source directory\n')
+#print('Renamed files: "gzScaled00X.jpg"')
+#
+#print('\nCreated numpy arrays:')
+#print('<<gzScaledArray>> (img data objects) and <<gzScaledNmArray>> (img names)\n')
+#
+#print('Saved Scaled images to the following location:')
+#print(gzScaledir)
+#print('\n')
+#
+#print('// *--------------------------------------------------------------* //')
 
 ## Crop image to master dimensions
 #eyeCrop1 = odmkEyeCrop(imgObjList[0], mstrSzX, mstrSzY)
@@ -607,36 +670,9 @@ print('// *--------------------------------------------------------------* //')
 # for n frames: 
 # randomly select an image from the source dir, hold for h frames
 
-
-# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-# ***TEMP - process img folder***
-# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
 #print('// *---::Import all source img (.jpg) in a directory::---*')
-#print('// *--------------------------------------------------------------* //')
-#
-## generate list all files in a directory
-#processSrcList = []
-#processObjList = []
-#
-## path = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp1/'
-#path = rootDir+'process/'
-#print('\nLoading source images from the following path:')
-#print(path)
-#
-#for filename in os.listdir(path):
-#    processSrcList.append(filename)
-#    processPath = path+filename
-#    processObjTemp = misc.imread(processPath)
-#    processObjList.append(processObjTemp)
-#processCount = len(processSrcList)
-#print('\nFound '+str(processCount)+' images in the folder:\n')
-#print(processSrcList)
-#print('\nCreated numpy arrays:')
-#print('<<processObjList>> (img data objects) and <<processSrcList>> (img names)\n')
-#
 #print('// *--------------------------------------------------------------* //')
 
 jpgSrcDir = rootDir+'process/'
@@ -650,41 +686,6 @@ gorgulanDir = rootDir+'gorgulanScale/'
 #[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
 [processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir, outName='gorgulan')
 
-#print('\n')
-#print('// *--------------------------------------------------------------* //')
-#print('// *---::Rescale and Normalize All imgages in folder::---*')
-#print('// *--------------------------------------------------------------* //')
-#
-## scale all img objects in processObjList
-#
-## Optional!: save all scaled images to dir
-#processScaledir = rootDir+'processScaled/'
-#
-## If Dir does not exist, makedir:
-#os.makedirs(processScaledir, exist_ok=True)
-#
-#processScaledNmArray = []
-#processScaledArray = []
-#
-## Find num digits required to represent max index
-#n_digits = int(ceil(np.log10(processCount))) + 2
-#nextInc = 0
-#for k in range(processCount):
-#    gzSTransc = odmkEyeDim(processObjList[k], mstrSzX, mstrSzY)
-#    # auto increment output file name
-#    nextInc += 1
-#    zr = ''    # reset lead-zero count to zero each itr
-#    for j in range(n_digits - len(str(nextInc))):
-#        zr += '0'
-#    strInc = zr+str(nextInc)
-#    gzScaledNm = 'processScaled'+strInc+'.jpg'
-#    gzScaledFull = processScaledir+gzScaledNm
-#    misc.imsave(gzScaledFull, gzSTransc)
-#    processScaledNmArray.append(gzScaledNm)
-#    processScaledArray.append(gzSTransc)
-#
-#print('\nScaled all images in the source directory\n')
-#print('Renamed files: "processScaled00X.jpg"')
 
 print('\nCreated python lists:')
 print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
@@ -695,30 +696,32 @@ print('\n')
 
 print('// *--------------------------------------------------------------* //')
 
-# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-# ***END TEMP***
-# $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-
 # output dir where processed img files are stored:
 imgRndSeldir = rootDir+'exp5/'
-imgRndSelNm = 'imgRndSelOut'
-
 # If Dir does not exist, makedir:
 os.makedirs(imgRndSeldir, exist_ok=True)
 
-# defined above!
-SzX = mstrSzX
-SzY = mstrSzY
+imgRndSelNm = 'imgRndSelOut'
 
-num_process = 46
+num_process = 393
 
 imgRndSelNmArray = []
 imgRndSelArray = []
 
 rIdxArray = randomIdx(num_process, len(processSrcList))
 
-# for i in range(num_process):
+imgCount = num_process
+n_digits = int(ceil(np.log10(imgCount))) + 2
+nextInc = 0
+for i in range(num_process):
+    nextInc += 1
+    zr = ''
+    for j in range(n_digits - len(str(nextInc))):
+        zr += '0'
+    strInc = zr+str(nextInc)
+    imgNormalizeNm = imgRndSelNm+strInc+'.jpg'
+    imgRndSelFull = imgRndSeldir+imgNormalizeNm
+    misc.imsave(imgRndSelFull, processScaledArray[rIdxArray[i]])
 
 
 # // *---------------------------------------------------------------------* //
@@ -880,109 +883,36 @@ rIdxArray = randomIdx(num_process, len(processSrcList))
 
 # // *---------------------------------------------------------------------* //
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::ODMKEYE - Image telescope Algorithm::---*')
-print('// *--------------------------------------------------------------* //')
-
-# iterate zoom out & overlay, zoom in & overlay
-
-# defined above!
-SzX = mstrSzX
-SzY = mstrSzY
-
-# num_img = 56
-num_img = 46
-inOrOut = 0     # telescope direction: 0 = in, 1 = out
-hop_sz = 5      # number of pixels to scale img each iteration
-
-# dir where processed img files are stored:
-imgTelescdir = rootDir+'exp1/'
-if inOrOut == 0:
-    imgTelescNm = 'telescopeOut'
-else:
-    imgTelescNm = 'telescopeIn'
-
-# **temp? - selects a specific image from array, should be more generic***
-gzIdx = 2
-imgClone = gzScaledArray[gzIdx]
-imgCloneNm = gzScaledNmArray[gzIdx]
-
-
-imgTelescopeNmArray = []
-imgTelescopeArray = []
-
-newDimX = SzX
-newDimY = SzY
-for i in range(num_img):
-    if newDimX > 2:
-        newDimX -= hop_sz
-    if newDimY > 2:
-        newDimY -= hop_sz
-    # scale image to new dimensions
-    imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
-    # region = (left, upper, right, lower)
-    # subbox = (i + 1, i + 1, newDimX, newDimY)
-
-    for j in range(SzY):
-        for k in range(SzX):
-            if ((j > i) and (j < newDimY) and (k > i) and (k < newDimX)):
-                imgClone[j, k, :] = imgItr[j - i, k - i, :]
-    # Find num digits required to represent max index
-    n_digits = int(ceil(np.log10(num_img))) + 2
-    zr = ''
-#    for j in range(n_digits - len(str(i + 1))):
-#        zr += '0'
-    if inOrOut == 1:
-        for j in range(n_digits - len(str(i + 1))):
-            zr += '0'
-        strInc = zr+str(i + 1)
-    else:
-        for j in range(n_digits - len(str(num_img - (i + 1)))):
-            zr += '0'
-        strInc = zr+str(num_img - (i + 1))
-    imgTelescFull = imgTelescdir+imgTelescNm+strInc+'.jpg'
-    misc.imsave(imgTelescFull, imgClone)
-    imgTelescopeNmArray.append(imgTelescNm+strInc+'.jpg')
-    imgTelescopeArray.append(imgClone)
-
-print('\nProcessed source img: \n'+imgCloneNm)
-print('Renamed files: "'+imgTelescNm+'00X.jpg"')
-
-print('\nCreated numpy arrays:')
-print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
-
-print('Saved Scaled images to the following location:')
-print(imgTelescdir)
-print('\n')
-
-print('// *--------------------------------------------------------------* //')    
-
-# // *---------------------------------------------------------------------* //
-# // *--end: Image telescope Out--*
-# // *---------------------------------------------------------------------* //
-
+# ***GOOD***
 
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
-#print('// *---::ODMKEYE - Image telescope Out::---*')
+#print('// *---::ODMKEYE - Image telescope Algorithm::---*')
 #print('// *--------------------------------------------------------------* //')
 #
 ## iterate zoom out & overlay, zoom in & overlay
-#
-## dir where processed img files are stored:
-#imgTelescdir = rootDir+'exp1/'
-#imgTelescNm = 'imgTelescopeOut'
-#
-#gzIdx = 2
-#imgClone = gzScaledArray[gzIdx]
-#imgCloneNm = gzScaledNmArray[gzIdx]
 #
 ## defined above!
 #SzX = mstrSzX
 #SzY = mstrSzY
 #
+## num_img = 56
 #num_img = 46
+#inOrOut = 0     # telescope direction: 0 = in, 1 = out
+#hop_sz = 5      # number of pixels to scale img each iteration
+#
+## dir where processed img files are stored:
+#imgTelescdir = rootDir+'exp1/'
+#if inOrOut == 0:
+#    imgTelescNm = 'telescopeOut'
+#else:
+#    imgTelescNm = 'telescopeIn'
+#
+## **temp? - selects a specific image from array, should be more generic***
+#gzIdx = 2
+#imgClone = gzScaledArray[gzIdx]
+#imgCloneNm = gzScaledNmArray[gzIdx]
+#
 #
 #imgTelescopeNmArray = []
 #imgTelescopeArray = []
@@ -991,9 +921,9 @@ print('// *--------------------------------------------------------------* //')
 #newDimY = SzY
 #for i in range(num_img):
 #    if newDimX > 2:
-#        newDimX -= 2
+#        newDimX -= hop_sz
 #    if newDimY > 2:
-#        newDimY -= 2
+#        newDimY -= hop_sz
 #    # scale image to new dimensions
 #    imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
 #    # region = (left, upper, right, lower)
@@ -1006,14 +936,21 @@ print('// *--------------------------------------------------------------* //')
 #    # Find num digits required to represent max index
 #    n_digits = int(ceil(np.log10(num_img))) + 2
 #    zr = ''
-#    for j in range(n_digits - len(str(i + 1))):
-#        zr += '0'
-#    strInc = zr+str(i + 1)
+##    for j in range(n_digits - len(str(i + 1))):
+##        zr += '0'
+#    if inOrOut == 1:
+#        for j in range(n_digits - len(str(i + 1))):
+#            zr += '0'
+#        strInc = zr+str(i + 1)
+#    else:
+#        for j in range(n_digits - len(str(num_img - (i + 1)))):
+#            zr += '0'
+#        strInc = zr+str(num_img - (i + 1))
 #    imgTelescFull = imgTelescdir+imgTelescNm+strInc+'.jpg'
 #    misc.imsave(imgTelescFull, imgClone)
 #    imgTelescopeNmArray.append(imgTelescNm+strInc+'.jpg')
 #    imgTelescopeArray.append(imgClone)
-#    
+#
 #print('\nProcessed source img: \n'+imgCloneNm)
 #print('Renamed files: "'+imgTelescNm+'00X.jpg"')
 #
@@ -1025,10 +962,10 @@ print('// *--------------------------------------------------------------* //')
 #print('\n')
 #
 #print('// *--------------------------------------------------------------* //')    
-#
-## // *---------------------------------------------------------------------* //
-## // *--end: Image telescope Out--*
-## // *---------------------------------------------------------------------* //
+
+# // *---------------------------------------------------------------------* //
+# // *--end: Image telescope Out--*
+# // *---------------------------------------------------------------------* //
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -1044,7 +981,14 @@ print('// *--------------------------------------------------------------* //')
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+# ***GOOD***
 
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::Concatenate all images in directory list::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+#
 #loc1 = rootDir+'uCache/imgTelescopeIn1_1436x888_56x/'
 #loc2 = rootDir+'uCache/imgTelescopeIn2_1436x888_56x/'
 #loc3 = rootDir+'uCache/imgTelescopeIn3_1436x888_56x/'
@@ -1052,14 +996,23 @@ print('// *--------------------------------------------------------------* //')
 #
 #dirList = [loc1, loc2, loc3, loc4]
 #
-#imgConcatObjList = []
-#imgConcatSrcList = []
-#for j in len(dirList):
-#    [imgObjList, imgSrcList] = importAllJpg(dirList[j])
-#    tempLen = len(imgSrcList)
-#    # rename files with index offsets
-#    imgConcatObjList.append(imgObjList)
-#    imgConcatSrcList.append(imgSrcList)
+#gorgulanConcatDir = rootDir+'gorgulanConcatExp/'
+#os.makedirs(concatDir, exist_ok=True)
+#reName = 'gorgulanConcat'
+#
+## function:  concatAllDir(dirList, w=0, concatDir='None', concatName='None')
+## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList)
+## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=0, concatName=reName)
+## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=0, concatDir=gorgulanConcatDir)
+## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=1, concatDir=gorgulanConcatDir)
+#[gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=1, concatDir=gorgulanConcatDir, concatName=reName)
+#
+#print('\nFound '+str(len(gorgulanSrcList))+' images in the directory list\n')
+#print('\nCreated python lists of ndimage objects:')
+#print('<<gorgulanObjList>> (img data objects) and <<gorgulanSrcList>> (img names)\n')
+#
+#print('// *--------------------------------------------------------------* //')
+
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -1067,7 +1020,6 @@ print('// *--------------------------------------------------------------* //')
 # end : img post-processing
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
 
 
 # // *---------------------------------------------------------------------* //
