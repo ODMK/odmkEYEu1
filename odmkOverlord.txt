@@ -3409,9 +3409,22 @@ _________________________________________________
 
 +333 cpp research
 +777 baryogenetecist
++777 venusian_slug stmz
 +666 eye ffmpegpyetc **
 +222 comms
 +999 kkshki
+
+2016/4/7
+
++777 baryogenetecist
++666 eye ffmpegpyetc **
++999 +f+
+
+2016/4/8
+
++111 electroMagnetics
++666 eye ffmpegpyetc **
+
 
 
 ::balance::
@@ -3561,6 +3574,23 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 
 
+Hey Stan, 
+
+What's up?
+
+Hey, remember about the wedding party thing?? April 23rd. We are doing a 2nd party that will be in Roppongi at our friends space just above superdeluxe. It is not going to be big, around 30 - 40 people. 
+It will start around 8 and go until around 12, or last train.　It is nomi-houdai, and there will be food, chill-music and some video projections that I am working on.  It is our friends space and they are cool people, but
+it is not really setup for a proper DJ/Live music event. But we can still play more relaxed music. I was thinking to have my friends who want to put together their own selection of .mp3s, so we can get a good variety
+of tunes. The 'Suggested fee' is 4000 which goes towards paying for the space, food and drinks! Let me know if you would like to go cause we gotta get a list together.
+
+Cheers! 
+
+
+I'm also waiting to hear from Baal and others, but anyway it should be a good time.
+
+
+
+
 A couple of things. You might have seen, but in May we are doing this strange modular vs. kaiju show. Cevin and I will be doing some live set. We have been working on some new material that should be fun to play live.
 
 Also, remember I told you about the wedding party thing?? April 23rd. We are doing a 2nd party that will be in Roppongi at our friends space just above superdeluxe. It is not going to be big, around 30 - 40 people. 
@@ -3569,8 +3599,6 @@ It will start around 8 and go until around 12, or last train.　It is nomi-houda
 
 
 
-
-I don't have this module yet. I think this is probably the only one in existance at the moment, Cevin had it for a short time then sent it back to the HW engineer (Phil Gallo). It is supposed to represent Skinny Puppy's very early studio setup, how they made their music back in the day with just a few simple samplers. Regardless of whether one cares about sp history or not, it should be a crazy beast!
 
 
 Matt is helping us with the daytime ceremony thing, I still need to confirm that he is going to the 2nd party, but yeah, hopefully him and a few other of my good friends who by default will be into electronic music!
@@ -3619,16 +3647,27 @@ Please let me know if you would like to attend, otherwise, get in touch anyway, 
 
 
 
-ゴルギュラン　ザ　バーザーカー
+
+OK, I agree with you.
+I will take care of food for the 2nd party. I will try to find something that is cheap and good.
 
 
 
+Old Bank Information:
+Citibank Japan Ltd., Tokyo, Japan
+SWIFT (BIC) code: CITIJPJT
 
+New Bank Information:
+SMBC Trust Bank Ltd.
+SWIFT (BIC) code: SMTCJPJT
 
-while (term != full) {
-    gestate
-}
-brood ++
+The address for the bank is:
+Nishi-Shimbashi Square 1-3-1, Nishi-Shimbashi
+Minato-ku, Tokyo 105-0003, Japan
+
+The Branch name is:
+Shinjuku-Higashi
+
 
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -3679,6 +3718,14 @@ will spin around slowly on top of the grinder like a horror merry-go-round of tw
 while the howls of a thousand virgin water nymphs peirce the ears with their sickening wail and the half-man half-rottweiler shadow  prince sprouts wings made of angel leather
 and does his moon growls while organizing a forest dance that includes scandalous activities.
 
+//　*------------------------------------------------------------------------------------------------------------------------------------* //
+
+while (term != full) {
+    gestate
+}
+brood ++
+
+//　*------------------------------------------------------------------------------------------------------------------------------------* //
 
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 ////////////////////////////////////////////////////////////////////////////////////////////////////
