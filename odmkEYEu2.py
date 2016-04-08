@@ -661,10 +661,81 @@ print('Output frame Heigth = '+str(mstrSzY))
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+# ***GOOD***
+
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMKEYE - Image Random Select Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## for n frames: 
+## randomly select an image from the source dir, hold for h frames
+#
+##print('\n')
+##print('// *--------------------------------------------------------------* //')
+##print('// *---::Import all source img (.jpg) in a directory::---*')
+##print('// *--------------------------------------------------------------* //')
+#
+#jpgSrcDir = rootDir+'process/'
+#
+#[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+#
+#gorgulanDir = rootDir+'gorgulanScale/'
+#
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir, outName='gorgulan')
+#
+#
+#print('\nCreated python lists:')
+#print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
+#
+##print('Saved Scaled images to the following location:')
+##print(processScaledir)
+#print('\n')
+#
+#print('// *--------------------------------------------------------------* //')
+#
+## output dir where processed img files are stored:
+#imgRndSeldir = rootDir+'exp5/'
+## If Dir does not exist, makedir:
+#os.makedirs(imgRndSeldir, exist_ok=True)
+#
+#imgRndSelNm = 'imgRndSelOut'
+#
+## final video length in seconds
+#eyeLength = 46
+#frameRate = 30
+#numFrames = eyeLength * frameRate
+#
+##num_process = 393
+#
+#imgRndSelNmArray = []
+#imgRndSelArray = []
+#
+#rIdxArray = randomIdx(numFrames, len(processSrcList))
+#
+#imgCount = numFrames
+#n_digits = int(ceil(np.log10(imgCount))) + 2
+#nextInc = 0
+#for i in range(numFrames):
+#    nextInc += 1
+#    zr = ''
+#    for j in range(n_digits - len(str(nextInc))):
+#        zr += '0'
+#    strInc = zr+str(nextInc)
+#    imgNormalizeNm = imgRndSelNm+strInc+'.jpg'
+#    imgRndSelFull = imgRndSeldir+imgNormalizeNm
+#    misc.imsave(imgRndSelFull, processScaledArray[rIdxArray[i]])
+#
+## // *--------------------------------------------------------------* //
+## // *---::ODMKEYE - END Image Random Select Algorithm::---*')
+## // *--------------------------------------------------------------* //
 
 print('\n')
 print('// *--------------------------------------------------------------* //')
-print('// *---::ODMKEYE - Image Random Select Algorithm::---*')
+print('// *---::ODMKEYE - Image Random Select Telescope Algorithm::---*')
 print('// *--------------------------------------------------------------* //')
 
 # for n frames: 
@@ -697,31 +768,68 @@ print('\n')
 print('// *--------------------------------------------------------------* //')
 
 # output dir where processed img files are stored:
-imgRndSeldir = rootDir+'exp5/'
+imgTelescRnddir = rootDir+'exp6/'
 # If Dir does not exist, makedir:
-os.makedirs(imgRndSeldir, exist_ok=True)
+os.makedirs(imgTelescRnddir, exist_ok=True)
 
-imgRndSelNm = 'imgRndSelOut'
+imgTelescRndNm = 'imgRndSelOut'
 
-num_process = 393
+# For now, assume tlPeriod * tlItr matches final video length
+frameRate = 30
+tlItr = 7       # number of periods of telescoping period
+tlPeriod = 30   # number of frames for telescoping period
+numFrames = tlItr * tlPeriod
+# final video length in seconds = numFrames / 30
+# eyeLength = numFrames / frameRate
 
-imgRndSelNmArray = []
-imgRndSelArray = []
+# defined above!
+SzX = mstrSzX
+SzY = mstrSzY
 
-rIdxArray = randomIdx(num_process, len(processSrcList))
+inOrOut = 0     # telescope direction: 0 = in, 1 = out
+hop_sz = 4
 
-imgCount = num_process
+imgTelescRndNmArray = []
+imgTelescRndArray = []
+
+#create an array of random index
+#use numFrames + tlItr to allow to increment starting image each tlPeriod
+rIdxArray = randomIdx(numFrames+tlItr, len(processSrcList))
+
+imgCount = numFrames
 n_digits = int(ceil(np.log10(imgCount))) + 2
 nextInc = 0
-for i in range(num_process):
-    nextInc += 1
-    zr = ''
-    for j in range(n_digits - len(str(nextInc))):
-        zr += '0'
-    strInc = zr+str(nextInc)
-    imgNormalizeNm = imgRndSelNm+strInc+'.jpg'
-    imgRndSelFull = imgRndSeldir+imgNormalizeNm
-    misc.imsave(imgRndSelFull, processScaledArray[rIdxArray[i]])
+for i in range(tlItr):
+    newDimX = SzX
+    newDimY = SzY
+    imgClone = processScaledArray[rIdxArray[i]]
+    for t in range(tlPeriod):
+        # select random image telescope in for select period
+        if newDimX > 2:
+            newDimX -= hop_sz
+        if newDimY > 2:
+            newDimY -= hop_sz
+        # scale image to new dimensions
+        imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
+        # region = (left, upper, right, lower)
+        # subbox = (i + 1, i + 1, newDimX, newDimY)
+        for j in range(SzY):
+            for k in range(SzX):
+                if ((j > t+hop_sz) and (j < newDimY) and (k > t+hop_sz) and (k < newDimX)):
+                    imgClone[j, k, :] = imgItr[j - t, k - t, :]
+        nextInc += 1
+        zr = ''
+        if inOrOut == 1:
+            for j in range(n_digits - len(str(nextInc))):
+                zr += '0'
+            strInc = zr+str(nextInc)
+        else:
+            for j in range(n_digits - len(str(imgCount - (nextInc)))):
+                zr += '0'
+            strInc = zr+str(imgCount - (nextInc))
+        imgNormalizeNm = imgTelescRndNm+strInc+'.jpg'
+        imgRndSelFull = imgTelescRnddir+imgNormalizeNm
+        misc.imsave(imgRndSelFull, imgClone)
 
 
 # // *---------------------------------------------------------------------* //
@@ -936,8 +1044,6 @@ for i in range(num_process):
 #    # Find num digits required to represent max index
 #    n_digits = int(ceil(np.log10(num_img))) + 2
 #    zr = ''
-##    for j in range(n_digits - len(str(i + 1))):
-##        zr += '0'
 #    if inOrOut == 1:
 #        for j in range(n_digits - len(str(i + 1))):
 #            zr += '0'
@@ -962,7 +1068,7 @@ for i in range(num_process):
 #print('\n')
 #
 #print('// *--------------------------------------------------------------* //')    
-
+#
 # // *---------------------------------------------------------------------* //
 # // *--end: Image telescope Out--*
 # // *---------------------------------------------------------------------* //

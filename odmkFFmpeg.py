@@ -66,7 +66,8 @@ print('// *--------------------------------------------------------------* //')
 print('// *---::Search for .jpg images in eyeSrcDir directory::---*')
 print('// *--------------------------------------------------------------* //')
 
-eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp1/'
+eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp6/'
+# eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/imgConcatExp/'
 # eyeOutDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/ffmpegOut/'
 
 # generate list all files in a directory
@@ -88,6 +89,16 @@ except OSError:
     print('\nError: directory:\n'+eyeSrcDir+'\ncannot be found\n')
     
 print('// *--------------------------------------------------------------* //')
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Set earSrcDir directory::---*')
+print('// *--------------------------------------------------------------* //')
+
+
+earSrc = 'C:/usr/eschei/odmkPython/odmk/audio/wavSrc/tonzuraTBE01.wav'
+
+
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
@@ -117,6 +128,16 @@ movie_cmd = ["ffmpeg",
              # '-vcodec', codec,
              '-b:v', bitrate,
              movie_name]
+             
+#movie_cmd = ["ffmpeg",
+#             '-r',  '%d' % frame_rate,
+#             '-i', os.path.join(eyeSrcDir, fmt_str),
+#             '-i', earSrc,
+#             '-shortest',
+#             '-y' if overwrite else '-n',
+#             # '-vcodec', codec,
+#             '-b:v', bitrate,
+#             movie_name]
 
 check_call(movie_cmd)
 
