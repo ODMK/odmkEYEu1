@@ -27,6 +27,9 @@ import matplotlib.pyplot as plt
 
 
 from odmkClear import *
+from odmkClocks import *
+
+
 
 # temp python debugger - use >>>pdb.set_trace() to set break
 import pdb
@@ -50,10 +53,6 @@ clear_all()
 def importAllJpg(srcDir):
     ''' imports all .jpg files into Python mem from source directory.
         srcDir should be Fullpath ending with "/" '''
-    print('\n')
-    print('// *--------------------------------------------------------------* //')
-    print('// *---::Import all source img (.jpg) in a directory::---*')
-    print('// *--------------------------------------------------------------* //')
 
     # generate list all files in a directory
     imgSrcList = []
@@ -221,6 +220,7 @@ def odmkEyeCrop(img, SzX, SzY, high):
 
 def odmkEyeDim(img, SzX, SzY, high):
     ''' Zoom and Crop image to match source dimensions '''
+    
     imgWidth = img.shape[1]
     imgHeight = img.shape[0]
 
@@ -302,10 +302,6 @@ def odmkScaleAll(srcObjList, SzX, SzY, w=0, high=0, outDir='None', outName='None
         Assumes srcObjList of ndimage objects exists in program memory
         Typically importAllJpg is run first.
         if w == 1, write processed images to output directory'''
-    print('\n')
-    print('// *--------------------------------------------------------------* //')
-    print('// *---::Rescale and Normalize All imgages in folder::---*')
-    print('// *--------------------------------------------------------------* //')
 
     # check write condition, if w=0 ignore outDir
     if w == 0 and outDir != 'None':
@@ -432,13 +428,13 @@ def concatAllDir(dirList, w=0, concatDir='None', concatName='None'):
     return [imgConcatObjList, imgConcatSrcList]
 
 
-# -----------------------------------------------------------------------------
+# // *********************************************************************** //
 # ODMK img Pixel-Banging Algorithms
-# -----------------------------------------------------------------------------
+# // *********************************************************************** //
 
 
 # // *--------------------------------------------------------------* //
-# // *---::ODMKEYE - END Image Random Select Algorithm::---*')
+# // *---::ODMKEYE - Image Random Select Algorithm::---*')
 # // *--------------------------------------------------------------* //
 
 def odmkImgRndSel(imgList, numFrames, imgOutDir, imgOutNm='None'):
@@ -469,6 +465,40 @@ def odmkImgRndSel(imgList, numFrames, imgOutDir, imgOutNm='None'):
     return
 
 
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - Image Rotate Sequence Algorithm::---*')
+# // *--------------------------------------------------------------* //
+
+def odmkImgRotateSeq(imgSrc, numFrames, imgOutDir, imgOutNm='None'):
+    ''' outputs a sequence of rotated images (static img input)
+        360 deg - period = numFrames
+        (ndimage.rotate: ex, rotate image by 45 deg:
+         rotate_gz1 = ndimage.rotate(gz1, 45, reshape=False)) '''
+
+    if imgOutNm != 'None':
+        imgRotateSeqNm = imgOutNm
+    else:
+        imgRotateSeqNm = 'imgRotateSeqOut'
+
+    imgRotNmArray = []
+    imgRotArray = []
+
+    imgCount = numFrames
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    for i in range(numFrames):
+        ang = (atan2(zn[i].imag, zn[i].real))*180/np.pi
+        rotate_gz1 = ndimage.rotate(imgSrc, ang, reshape=False)
+        nextInc += 1
+        zr = ''
+        for j in range(n_digits - len(str(nextInc))):
+            zr += '0'
+        strInc = zr+str(nextInc)
+        imgRotateSeqFull = imgOutDir+imgRotateSeqNm+strInc+'.jpg'
+        misc.imsave(imgRotateSeqFull, rotate_gz1)
+        imgRotNmArray.append(imgRotateSeqFull)
+        imgRotArray.append(rotate_gz1)
+    return
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
@@ -541,21 +571,46 @@ print('// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ //')
 # // *---------------------------------------------------------------------* //
 
 
-rootDir = 'C:/Users/djoto-odmk/odmk-sci/odmk_code/odmkPython/eye/odmkSrc/'
+#rootDir = 'C:/Users/djoto-odmk/odmk-sci/odmk_code/odmkPython/eye/odmkSrc/'
+rootDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/'
+
 
 # If Dir does not exist, makedir:
 # os.makedirs(path, exist_ok=True)
 
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Set Master Parameters for output::---*')
+print('// *--------------------------------------------------------------* //')
+
+
 # // *---------------------------------------------------------------------* //
+# // *--Primary parameters--*
+# // *---------------------------------------------------------------------* //
+
+# length of x in seconds:
+xLength = 1
+
+# audio sample rate:
+fs = 44100.0
+
+# audio sample bit width
+bWidth = 24
+
+# video frames per second:
+framesPerSec = 30.0
+
+bpm = 133.0
+
+# time signature: 0 = 4/4; 1 = 3/4
+timeSig = 0
+
 
 # // *---------------------------------------------------------------------* //
 # // *--Set Master Dimensions--*
 # // *---------------------------------------------------------------------* //
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::Set Master Dimensions for output::---*')
-print('// *--------------------------------------------------------------* //')
 
 # Golden ratio frames:
 mstrSzX = 1076
@@ -572,33 +627,6 @@ print('Output frame Heigth = '+str(mstrSzY))
 
 # // *---------------------------------------------------------------------* //
 
-#print('\n')
-#print('// *--------------------------------------------------------------* //')
-#print('// *---::Rescale and Normalize All imgages in folder::---*')
-#print('// *--------------------------------------------------------------* //')
-#
-## generate list all files in a directory
-#imgSrcList = []
-#imgObjList = []
-#
-## path = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp1/'
-#path = rootDir+'eyeSrcExp1/'
-#print('\nLoading source images from the following path:')
-#print(path)
-#
-#for filename in os.listdir(path):
-#    imgSrcList.append(filename)
-#    imgPath = path+filename
-#    imgObjTemp = misc.imread(imgPath)
-#    imgObjList.append(imgObjTemp)
-#imgCount = len(imgSrcList)
-#print('\nFound '+str(imgCount)+' images in the folder:\n')
-#print(imgSrcList)
-#print('\nCreated numpy arrays:')
-#print('<<imgObjList>> (img data objects) and <<imgSrcList>> (img names)\n')
-#
-#print('// *--------------------------------------------------------------* //')
-
 ## print an image object from the list
 ## odmkEyePrint(imgObjList[3], 'MFKD', 1)
 #
@@ -614,76 +642,72 @@ print('Output frame Heigth = '+str(mstrSzY))
 ## gzTest = gz3
 #misc.imsave('imgSrc/exp1/testImgObjPrint.jpg', gzTest)
 
-## // *---------------------------------------------------------------------* //
-#
-## scale all img objects in imgObjList
-#
-## Optional!: save all scaled images to dir
-#gzScaledir = rootDir+'expScaled/'
-#
-#gzScaledNmArray = []
-#gzScaledArray = []
-#
-## Find num digits required to represent max index
-#n_digits = int(ceil(np.log10(imgCount))) + 2
-#nextInc = 0
-#for k in range(imgCount):
-#    gzSTransc = odmkEyeDim(imgObjList[k], mstrSzX, mstrSzY)
-#    # auto increment output file name
-#    nextInc += 1
-#    zr = ''    # reset lead-zero count to zero each itr
-#    for j in range(n_digits - len(str(nextInc))):
-#        zr += '0'
-#    strInc = zr+str(nextInc)
-#    gzScaledNm = 'gzScaled'+strInc+'.jpg'
-#    gzScaledFull = gzScaledir+gzScaledNm
-#    misc.imsave(gzScaledFull, gzSTransc)
-#    gzScaledNmArray.append(gzScaledNm)
-#    gzScaledArray.append(gzSTransc)
-#
-#print('\nScaled all images in the source directory\n')
-#print('Renamed files: "gzScaled00X.jpg"')
-#
-#print('\nCreated numpy arrays:')
-#print('<<gzScaledArray>> (img data objects) and <<gzScaledNmArray>> (img names)\n')
-#
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+# *-----BYPASS BEGIN-----*
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Import all source img (.jpg) in a directory::---*')
+print('// *--------------------------------------------------------------* //')
+
+# process raw .jpg folder
+
+jpgSrcDir = rootDir+'process/'
+
+[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+
+# *-----BYPASS END-----*
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+# *-----BYPASS BEGIN-----*
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Scale all imgages in img obj array::---*')
+print('// *--------------------------------------------------------------* //')
+
+processScaleDir = rootDir+'gorgulanScale/'
+
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=1, outDir=gorgulanDir, outName='gorgulan')
+[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=0, outDir=processScaleDir, outName='gorgulan')
+
+print('\nCreated python lists:')
+print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
+
+print('Saved Scaled images to the following location:')
+print(processScaleDir)
+print('\n')
+
+# *-----BYPASS END-----*
+
+# // *********************************************************************** //
+
+# load pre-scaled img folder
+
+#jpgSrcDir = rootDir+'viracocha960x960/'
+
+#[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+
+
+#print('\nCreated python lists:')
+#print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
+
 #print('Saved Scaled images to the following location:')
-#print(gzScaledir)
+#print(processScaledir)
 #print('\n')
-#
-#print('// *--------------------------------------------------------------* //')
 
-## Crop image to master dimensions
-#eyeCrop1 = odmkEyeCrop(imgObjList[0], mstrSzX, mstrSzY)
-## odmkEyePrint(eyeCrop1, 'MFKD Cropped', 3)
-#misc.imsave('imgSrc/exp1/myFirstKikDrumCrop00001.jpg', eyeCrop1)
-#
-## Zoom and Crop image to master dimensions
-#
-#img3Width = gz3.shape[1]
-#img3Height = gz3.shape[0]
 
-#wdiff = img3Width - mstrSzX
-#hdiff = img3Height - mstrSzY
-#minDiff = min(wdiff, hdiff)
-#print('minDiff = '+str(minDiff))
-#
-#if wdiff <= hdiff:
-#    zoomFactor = (img3Width - minDiff) / img3Width
-#else:
-#    zoomFactor = (img3Height - minDiff) / img3Height
-#
-#print('zoomFactor = '+str(zoomFactor))
-#
-#gz3ZOOM = odmkEyeZoom(gz3, zoomFactor)
-#misc.imsave('imgSrc/exp1/myFirstKikDrumZOOM00001.jpg', gz3ZOOM)
-#
-#gz3ZCrop = odmkEyeCrop(gz3ZOOM, mstrSzX, mstrSzY )
-#misc.imsave('imgSrc/exp1/myFirstKikDrumZCrop00001.jpg', gz3ZCrop)
-
-#gz3Scaled = odmkEyeDim(gz3, mstrSzX, mstrSzY)
-#misc.imsave('imgSrc/exp1/myFirstKikDrumScaled00001.jpg', gz3Scaled)
-
+# // *********************************************************************** //
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
@@ -704,52 +728,56 @@ print('Output frame Heigth = '+str(mstrSzY))
 # // *********************************************************************** //
 
 # ***GOOD***
-
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::ODMKEYE - Image Random Select Algorithm::---*')
-print('// *--------------------------------------------------------------* //')
-
-# for n frames: 
-# randomly select an image from the source dir, hold for h frames
+# *-----BYPASS BEGIN-----*
 
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
-#print('// *---::Import all source img (.jpg) in a directory::---*')
+#print('// *---::ODMKEYE - Image Random Select Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## for n frames:
+## randomly select an image from the source dir, hold for h frames
+#
+## output dir where processed img files are stored:
+#imgRndSeldir = rootDir+'exp7/'
+## If Dir does not exist, makedir:
+#os.makedirs(imgRndSeldir, exist_ok=True)
+#
+#imgRndSelNm = 'imgRndSelOut'
+#
+## final video length in seconds
+#eyeLength = 13
+#frameRate = 30
+#numFrames = eyeLength * frameRate
+#
+#odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
+#
 #print('// *--------------------------------------------------------------* //')
 
-# process raw .jpg folder
+# *-----BYPASS END-----*
 
-# jpgSrcDir = rootDir+'process/'
-#jpgSrcDir = rootDir+'cKaiju/'
-#
-#[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
-#
-#gorgulanDir = rootDir+'gorgulanScale/'
-
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=1, outDir=gorgulanDir, outName='gorgulan')
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - END Image Random Select Algorithm::---*')
+# // *--------------------------------------------------------------* //
 
 
 # // *********************************************************************** //
-
-# load pre-scaled img folder
-
-jpgSrcDir = rootDir+'viracocha960x960/'
-
-[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+# // *********************************************************************** //
+# // *********************************************************************** //
 
 
-print('\nCreated python lists:')
-print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
+# *-----BYPASS BEGIN-----*
 
-#print('Saved Scaled images to the following location:')
-#print(processScaledir)
 print('\n')
-
 print('// *--------------------------------------------------------------* //')
+print('// *---::ODMKEYE - Image Random BPM Algorithm::---*')
+print('// *--------------------------------------------------------------* //')
+
+# create array of downFrames from odmkClocks.py
+downFrames = odmkDownFrames(totalSamples, framesPerBeat)
+
+# for n frames:
+# randomly select an image from the source dir, hold for h frames
 
 # output dir where processed img files are stored:
 imgRndSeldir = rootDir+'exp7/'
@@ -763,9 +791,11 @@ eyeLength = 13
 frameRate = 30
 numFrames = eyeLength * frameRate
 
-    
-odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')        
-  
+odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
+
+print('// *--------------------------------------------------------------* //')
+
+# *-----BYPASS END-----*
 
 # // *--------------------------------------------------------------* //
 # // *---::ODMKEYE - END Image Random Select Algorithm::---*')
@@ -776,6 +806,8 @@ odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
 # // *********************************************************************** //
 # // *********************************************************************** //
 
+# ***GOOD***
+# *-----BYPASS BEGIN-----*
 
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
@@ -784,33 +816,8 @@ odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
 #
 ## for n frames: 
 ## randomly select an image from the source dir, hold for h frames
-#
-##print('\n')
-##print('// *--------------------------------------------------------------* //')
-##print('// *---::Import all source img (.jpg) in a directory::---*')
-##print('// *--------------------------------------------------------------* //')
-#
-#jpgSrcDir = rootDir+'process/'
-#
-#[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
-#
-#gorgulanDir = rootDir+'gorgulanScale/'
-#
-##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
-##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
-##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir, outName='gorgulan')
-#
-#
-#print('\nCreated python lists:')
-#print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
-#
-##print('Saved Scaled images to the following location:')
-##print(processScaledir)
-#print('\n')
-#
-#print('// *--------------------------------------------------------------* //')
-#
+
+
 ## output dir where processed img files are stored:
 #imgTelescRnddir = rootDir+'exp6/'
 ## If Dir does not exist, makedir:
@@ -875,45 +882,34 @@ odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
 #        imgRndSelFull = imgTelescRnddir+imgNormalizeNm
 #        misc.imsave(imgRndSelFull, imgClone)
 
+# *-----BYPASS END-----*
 
 # // *********************************************************************** //
 # // *********************************************************************** //
 # // *********************************************************************** //
 
 
-# // *---------------------------------------------------------------------* //
-# // *--Incremental Rotate--*
-# // *---------------------------------------------------------------------* //
+# *-----BYPASS BEGIN-----*
 
-## ex, rotate image by 45 deg:
-## rotate_gz1 = ndimage.rotate(gz1, 45, reshape=False)
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::Output a sequence of rotates images, period = numFrames::---*')
+#print('// *--------------------------------------------------------------* //')
 #
-## dir where processed img files are stored:
-#gzdir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp1/'
 #
 ## num_gz = 192
-#num_gz = 111
-#zn = cyclicZn(num_gz)
+#numFrames = 111
+#zn = cyclicZn(numFrames)
 #
+#imgSrc = processScaledArray[9]
 #
-#gz1NmArray = []
-#gz1Array = []
+#outDir = rootDir+'imgRotateOut/'
+#os.makedirs(outDir, exist_ok=True)
+#outNm = 'imgRotate'
 #
-#nextInc = 0
-#for i in range(num_gz):
-#    zr = ''
-#    ang = (atan2(zn[i].imag, zn[i].real))*180/np.pi
-#    rotate_gz1 = ndimage.rotate(gz1, ang, reshape=False)
-#    nextInc += 1
-#    # Find num digits required to represent max index
-#    n_digits = int(ceil(np.log10(num_gz))) + 2
-#    for j in range(n_digits - len(str(nextInc))):
-#        zr += '0'
-#    strInc = zr+str(nextInc)
-#    gz1Nm = gzdir+gz1_name+strInc+'.jpg'
-#    misc.imsave(gz1Nm, rotate_gz1)
-#    gz1NmArray.append(gz1Nm)
-#    gz1Array.append(rotate_gz1)
+#odmkImgRotateSeq(imgSrc, numFrames, outDir, imgOutNm=outNm)
+
+# *-----BYPASS END-----*
 
 # // *---------------------------------------------------------------------* //
 
@@ -970,21 +966,33 @@ odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
 # // *--Eye COS Crossfader--*
 # // *---------------------------------------------------------------------* //
 
-## crossfade between two images using cos windows for constant power out:
-## rotate_gz1 = ndimage.rotate(gz1, 45, reshape=False)
-#
-## dir where processed img files are stored:
-#gzdir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp1/'
-#
-#eye_name = 'odmkCosXfade'
-#
-## num_gz = 192
+# crossfade between two images using cos windows for constant power out:
+# rotate_gz1 = ndimage.rotate(gz1, 45, reshape=False)
+
+# dir where processed img files are stored:
+srcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp23/'
+
+[imgSrcObj, imgSrcObjNm] = importAllJpg(srcDir)
+
+a = imgSrcObj[1]
+b = imgSrcObj[0]
+
+c = a/((b.astype('float')+1)/256)
+# saturating function - if c[m,n] > 255, set to 255:
+d = c*(c < 255)+255*np.ones(np.shape(c))*(c > 255)
+
+eyeMixFull = srcDir+'eyeMix.jpg'
+misc.imsave(eyeMixFull, d)
+
+
+
+# num_gz = 192
 #num_gz = 256
-##zn = cyclicZn(num_gz)
-#
-## initialize a 1/4 period Cos window
+#zn = cyclicZn(num_gz)
+
+# initialize a 1/4 period Cos window
 #winCosXfade = quarterCos(num_gz)
-#
+
 #gzCosxA_r = gzScaledArray[0][:, :, 0]
 #gzCosxA_g = gzScaledArray[0][:, :, 1]
 #gzCosxA_b = gzScaledArray[0][:, :, 2]
@@ -1016,35 +1024,7 @@ odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
 #gzMix_g = gzAHalf_g + gzBHalf_g
 #gzMix_b = gzAHalf_g + gzBHalf_b
 #gzMix_recon = np.dstack((gzMix_r, gzMix_g, gzMix_b))
-#
-#gzMix_reconFull = gzdir+'gzMix_recon.jpg'
-#misc.imsave(gzMix_reconFull, gzMix_recon)
-#
-#
-#
-#
-#gzCosxNmArray = []
-#gzCosxArray = []
-#
-#nextInc = 0
-#for i in range(num_gz):
-#    # interpolate from one image to another using COS windows
-#
-#    
-#        
-#    zr = ''        
-#    nextInc += 1
-#    # Find num digits required to represent max index
-#    n_digits = int(ceil(np.log10(num_gz))) + 2
-#    for j in range(n_digits - len(str(nextInc))):
-#        zr += '0'
-#    strInc = zr+str(nextInc)
-#    gz1Nm = gzdir+eye_name+strInc+'.jpg'
-#    misc.imsave(gz1Nm, rotate_gz1)
-#    gz1NmArray.append(gz1Nm)
-#    gz1Array.append(rotate_gz1)
 
-# // *---------------------------------------------------------------------* //
 
 # // *********************************************************************** //
 # // *********************************************************************** //
@@ -1183,7 +1163,6 @@ odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
 #print('// *--------------------------------------------------------------* //')
 
 
-
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
 # end : img post-processing
@@ -1222,7 +1201,7 @@ print('// *--------------------------------------------------------------* //')
 # -for next random selection to choose from until all pixels replaced
 
 # 2D wave eqn modulation
-# -modulate colors/light, or modulate between two images ( > 50% new image pixel)
+# modulate colors/light or modulate between two images ( > 50% new image pixel)
 
 # 2D wave modulation iterating zoom
 
