@@ -15,25 +15,11 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 # *****************************************************************************
 
-
 import os
 import random
 import numpy as np
-import scipy as sp
-from scipy import ndimage
-from scipy import misc
-import matplotlib.pyplot as plt
+# import scipy as sp
 
-
-from odmkClear import *
-
-# temp python debugger - use >>>pdb.set_trace() to set break
-import pdb
-
-
-# // *---------------------------------------------------------------------* //
-
-clear_all()
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
@@ -45,9 +31,6 @@ clear_all()
 # // *********************************************************************** //
 # util functions
 # // *********************************************************************** //
-
-import os
-import numpy as np
 
 
 def cyclicZn(n):
@@ -68,39 +51,6 @@ def randomIdx(n, k):
         randIdx.append(round(random.random()*(k-1)))
     return randIdx
 
-
-# // *********************************************************************** //
-# sequence generators
-# // *********************************************************************** //
-
-# // *---------------------------------------------------------------------* //
-# gen downbeat sequence
-# // *---------------------------------------------------------------------* //
-
-def odmkDownBeats(totalSamples, samplesPerBeat):
-    ''' generates an output array of 1s at downbeat, 0s elsewhere '''
-    
-    xClockDown = np.zeros([totalSamples, 1])
-    for i in range(totalSamples):
-        if i % np.ceil(samplesPerBeat) == 0:
-            xClockDown[i] = 1
-        else:
-            xClockDown[i] = 0
-    return xClockDown
-
-
-def odmkDownFrames(totalSamples, framesPerBeat):
-    ''' generates an output array of 1s at frames corresponding to
-        downbeats, 0s elsewhere '''
-
-    xFramesDown = np.zeros([totalSamples, 1])
-    for i in range(totalSamples):
-        if i % np.ceil(framesPerBeat) == 0:
-            xFramesDown[i] = 1
-        else:
-            xFramesDown[i] = 0
-    return xFramesDown
-
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
 # end : function definitions
@@ -110,84 +60,79 @@ def odmkDownFrames(totalSamples, framesPerBeat):
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
-# begin : parameter definitions
+# begin : object definition
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+class odmkClocks:
+    ''' odmk audio/video clocking modules 
+        usage: myOdmkClks = odmkClocks(outLength, fs, bpm, framesPerSec)    
+        ex: xDownFrames = myOdmkClks.clkDownFrames() ->
+        returns an np.array of 1's at 1st frame of downbeat, 0's elsewhere '''
 
-# // *---------------------------------------------------------------------* //
-# Primary parameters
-# // *---------------------------------------------------------------------* //
+    def __init__(self, xLength, fs, bpm, framesPerSec):
 
+        # *---set primary parameters from inputs---*
 
-# length of x in seconds:
-xLength = 1
+        self.xLength = xLength
+        self.fs = fs
+        self.bpm = bpm
+        self.framesPerSec = framesPerSec
+        print('\nAn odmkClocks object has been instanced with:')
+        print('xLength = '+str(self.xLength)+'; fs = '+str(fs)+'; bpm = '+str(bpm)+'; framesPerSec = '+str(framesPerSec))
 
-# audio sample rate:
-fs = 44100.0
+        # *---set secondary parameters---*
 
-# audio sample bit width
-bWidth = 24
+        # set bps - beats per second
+        self.bps = bpm / 60
+        # set spb - Seconds per beat
+        self.spb = 60.0 / bpm
+        # set samplesPerBeat
+        self.samplesPerBeat = fs * self.spb
+        # set samplesPerFrame - Num audio samples per video frame
+        self.samplesPerFrame = framesPerSec * fs
+        # set framesPerBeat - Num video frames per beat
+        self.framesPerBeat = self.spb * framesPerSec
+        # set totalSamples - Total audio samples in x
+        self.totalSamples = int(np.ceil(xLength * fs))
+        # set totalFrames - Total video frames in x
+        self.totalFrames = int(np.ceil(xLength * framesPerSec))
+        # set totalBeats - total beats in x
+        self.totalBeats = self.totalSamples / self.samplesPerBeat
 
-# video frames per second:
-framesPerSec = 30.0
+    # // ******************************************************************* //
+    # sequence generators
+    # // ******************************************************************* //
 
-bpm = 133.0
+    # // *-----------------------------------------------------------------* //
+    # gen downbeat sequence
+    # // *-----------------------------------------------------------------* //
 
-# time signature: 0 = 4/4; 1 = 3/4
-timeSig = 0
+    def clkDownBeats(self):
+        ''' generates an output array of 1s at downbeat, 0s elsewhere '''
 
+        xClockDown = np.zeros([self.totalSamples, 1])
+        for i in range(self.totalSamples):
+            if i % np.ceil(self.samplesPerBeat) == 0:
+                xClockDown[i] = 1
+            else:
+                xClockDown[i] = 0
+        return xClockDown
 
+    def clkDownFrames(self):
+        ''' generates an output array of 1s at frames corresponding to
+            downbeats, 0s elsewhere '''
 
-
-# // *---------------------------------------------------------------------* //
-# 2nd parameters
-# // *---------------------------------------------------------------------* //
-
-# beats per second
-bps = bpm / 60
-# seconds per beat
-spb = 60.0 / bpm
-
-# Num of samples per beat
-samplesPerBeat = fs * spb 
-
-# Num of audio samples per frame:
-samplesPerFrame = framesPerSec * fs
-
-# Num of frames per beat
-framesPerBeat = spb * framesPerSec
-
-# Total audio samples in x:
-totalSamples = int(np.ceil(xLength * fs))
-
-# Total video frames in x:
-totalFrames = int(np.ceil(xLength * framesPerSec))
-
-# Total beats in x:
-totalBeats = totalSamples / samplesPerBeat
-
+        xFramesDown = np.zeros([self.totalSamples, 1])
+        for i in range(self.totalSamples):
+            if i % np.ceil(self.framesPerBeat) == 0:
+                xFramesDown[i] = 1
+            else:
+                xFramesDown[i] = 0
+        return xFramesDown
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
-# end : parameter definitions
+# end : object definition
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-
-# /////////////////////////////////////////////////////////////////////////////
-# #############################################################################
-# begin : generate sequence
-# #############################################################################
-# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-
-
-# // *---------------------------------------------------------------------* //
-# gen downbeat sequence
-# // *---------------------------------------------------------------------* //
-
-
-downBeats = odmkDownBeats(totalSamples, samplesPerBeat)
-
-downFrames = odmkDownFrames(totalSamples, framesPerBeat)
-

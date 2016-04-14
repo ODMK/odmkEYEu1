@@ -23,11 +23,12 @@ import numpy as np
 import scipy as sp
 from scipy import ndimage
 from scipy import misc
+from PIL import Image
 import matplotlib.pyplot as plt
 
 
 from odmkClear import *
-from odmkClocks import *
+import odmkClocks as clks
 
 
 
@@ -62,10 +63,11 @@ def importAllJpg(srcDir):
     print(srcDir)
 
     for filename in os.listdir(srcDir):
-        imgSrcList.append(filename)
-        imgPath = srcDir+filename
-        imgObjTemp = misc.imread(imgPath)
-        imgObjList.append(imgObjTemp)
+        if (filename.endswith('.jpg') or filename.endswith('.jpeg') or filename.endswith('.png')):
+            imgSrcList.append(filename)
+            imgPath = srcDir+filename
+            imgObjTemp = misc.imread(imgPath)
+            imgObjList.append(imgObjTemp)
     imgCount = len(imgSrcList)
     print('\nFound '+str(imgCount)+' images in the folder:\n')
     print(imgSrcList)
@@ -607,10 +609,20 @@ bpm = 133.0
 timeSig = 0
 
 
-# // *---------------------------------------------------------------------* //
-# // *--Set Master Dimensions--*
-# // *---------------------------------------------------------------------* //
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Instantiate clocking/sequencing object::---*')
+print('// *--------------------------------------------------------------* //')
 
+eyeClks = clks.odmkClocks(xLength, fs, bpm, framesPerSec)
+
+# example: simple sequence -> downFrames (1 on downbeat frame, o elsewhere)
+# eyeDFrames = eyeCks.clkDownFrames()
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Set Master Dimensions::---*')
+print('// *--------------------------------------------------------------* //')
 
 # Golden ratio frames:
 mstrSzX = 1076
@@ -668,25 +680,25 @@ jpgSrcDir = rootDir+'process/'
 
 # *-----BYPASS BEGIN-----*
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::Scale all imgages in img obj array::---*')
-print('// *--------------------------------------------------------------* //')
-
-processScaleDir = rootDir+'gorgulanScale/'
-
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=1, outDir=gorgulanDir, outName='gorgulan')
-[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=0, outDir=processScaleDir, outName='gorgulan')
-
-print('\nCreated python lists:')
-print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
-
-print('Saved Scaled images to the following location:')
-print(processScaleDir)
-print('\n')
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::Scale all imgages in img obj array::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+#processScaleDir = rootDir+'gorgulanScale/'
+#
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=1, outDir=gorgulanDir, outName='gorgulan')
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=0, outDir=processScaleDir, outName='gorgulan')
+#
+#print('\nCreated python lists:')
+#print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
+#
+#print('Saved Scaled images to the following location:')
+#print(processScaleDir)
+#print('\n')
 
 # *-----BYPASS END-----*
 
@@ -768,32 +780,33 @@ print('\n')
 
 # *-----BYPASS BEGIN-----*
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::ODMKEYE - Image Random BPM Algorithm::---*')
-print('// *--------------------------------------------------------------* //')
-
-# create array of downFrames from odmkClocks.py
-downFrames = odmkDownFrames(totalSamples, framesPerBeat)
-
-# for n frames:
-# randomly select an image from the source dir, hold for h frames
-
-# output dir where processed img files are stored:
-imgRndSeldir = rootDir+'exp7/'
-# If Dir does not exist, makedir:
-os.makedirs(imgRndSeldir, exist_ok=True)
-
-imgRndSelNm = 'imgRndSelOut'
-
-# final video length in seconds
-eyeLength = 13
-frameRate = 30
-numFrames = eyeLength * frameRate
-
-odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
-
-print('// *--------------------------------------------------------------* //')
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMKEYE - Image Random BPM Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+#
+## for n frames:
+## randomly select an image from the source dir, hold for h frames
+#
+## generate the downFrames sequence:
+#eyeDFrames = eyeCks.clkDownFrames()
+#
+## output dir where processed img files are stored:
+#imgRndSeldir = rootDir+'exp7/'
+## If Dir does not exist, makedir:
+#os.makedirs(imgRndSeldir, exist_ok=True)
+#
+#imgRndSelNm = 'imgRndSelOut'
+#
+## final video length in seconds
+#eyeLength = 13
+#frameRate = 30
+#numFrames = eyeLength * frameRate
+#
+#odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
+#
+#print('// *--------------------------------------------------------------* //')
 
 # *-----BYPASS END-----*
 
@@ -970,19 +983,57 @@ print('// *--------------------------------------------------------------* //')
 # rotate_gz1 = ndimage.rotate(gz1, 45, reshape=False)
 
 # dir where processed img files are stored:
-srcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp23/'
+# srcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp23/'
+srcCrossDir = rootDir+'eyeSrcExp23/'
+outCrossDir = rootDir+'eyeCrossOut/'
+os.makedirs(outCrossDir, exist_ok=True)
 
-[imgSrcObj, imgSrcObjNm] = importAllJpg(srcDir)
+[imgSrcObj, imgSrcObjNm] = importAllJpg(srcCrossDir)
 
 a = imgSrcObj[1]
 b = imgSrcObj[0]
 
+
+
+
+# image division blend algorithm..
 c = a/((b.astype('float')+1)/256)
 # saturating function - if c[m,n] > 255, set to 255:
 d = c*(c < 255)+255*np.ones(np.shape(c))*(c > 255)
 
-eyeMixFull = srcDir+'eyeMix.jpg'
-misc.imsave(eyeMixFull, d)
+eyeDivMixFull = outCrossDir+'eyeDivMix.jpg'
+misc.imsave(eyeDivMixFull, d)
+
+
+# ***
+# convert from Image image to Numpy array:
+# arr = array(img)
+
+# convert from Numpy array to Image image:
+# img = Image.fromarray(array)
+
+
+#aImg = Image.open(srcCrossDir+'gorgulan0011.jpg')
+#bImg = Image.open(srcCrossDir+'gorgulan0012.jpg')
+
+aImg = Image.fromarray(a)
+bImg = Image.fromarray(b)
+
+eyeAlphaBlendFull = outCrossDir+'eyeAlphaB.jpg'
+
+alphaB1 = Image.blend(aImg, bImg, 0.1)
+misc.imsave(eyeAlphaBlendFull, alphaB1)
+alphaB2 = Image.blend(aImg, bImg, 0.3)
+misc.imsave(eyeAlphaBlendFull, alphaB2)
+alphaB3 = Image.blend(aImg, bImg, 0.5)
+misc.imsave(eyeAlphaBlendFull, alphaB3)
+alphaB4 = Image.blend(aImg, bImg, 0.7)
+misc.imsave(eyeAlphaBlendFull, alphaB4)
+alphaB5 = Image.blend(aImg, bImg, 0.9)
+misc.imsave(eyeAlphaBlendFull, alphaB5)
+
+
+
 
 
 
