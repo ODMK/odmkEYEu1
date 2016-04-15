@@ -1760,22 +1760,73 @@ _________________________________________________
 +777 baryogenetecist
 +666 eye ffmpegpyetc **
 
+// *--------------------------------------------------------------* //
 
+
++000 overlord ***
+
++111 AI/NN research **
++111 electromagnetics *
++111 QM/EM research **
+
++222 renoisereddit *
++222 comms *****
++222 comm igk *
+
++333 Python research ******
++333 Python ffmpeg *
++333 AI/NN py basic *
++333 c++ fftw3 *
++333 C++ research *
++333 Python numpy slice werk *
++333 odmkFFTiFFTx.py *
++333 webpunk.py *
+
++444 renoiseLua odmk ****
++444 phasevocX2_wav scilab *********
++444 python odmkWavRdWr **
++444 python DFT model **
++444 odmkVST1 *
++444 python wav/sinesrc FFTiFFT ***
+
++555 studio construction *
+
++666 python - odmkTriFoldKnot1.py *
++666 python EYE ***
++666 eye ffmpegpyetc ***
+
++777 xanaduX *
++777 alexandromeda ***
++777 baryogeneticist *********
++777 wizardovoz *
++777 dubtalica ***
++777 rndm *
++777 pulse+demon *
++777 zulugalacticbreaks *
++777 zulugalacticnomad *****
++777 horrorqueen **
++777 heliocoprion *
+
++999 +f+ ******
++999 schei eye exp *
++999 print schw form *
++999 kei *
+
+// *--------------------------------------------------------------* //
 
 ::balance::
-000 - 3
-111 - 5
-222 - 7
-333 - 13
-444 - 20
-555 - 1
-666 - 7
-777 - 28
+000 - 3    ***
+111 - 5    *****
+222 - 7    *******
+333 - 13  *************
+444 - 21  *********************
+555 - 1    *
+666 - 7    *******
+777 - 28  ****************************
 888 - 0
-999 - 8
+999 - 9    *********
 
-Total = 92
-
+Total = 94
 
 _________________________________________________
 
@@ -1841,41 +1892,54 @@ _________________________________________________
 
 2016/4/11
 
-+999 xosecretsauce
 +666 eye ffmpegpyetc
 +777 baryogenetecist
-
++999 xosecretsauce
 
 2016/4/12
 
 +333 cpp research
++222 comms
 +444 odmkClocks
 +666 eye ffmpegpyetc
 
 2016/4/13
 
-+777 baryogenetecist
++444 phasevocX2_wav scilab
 +666 eye ffmpegpyetc
++777 baryogenetecist
 
+2016/4/14
 
++000 overlord
++444 odmkClocks
++666 eye ffmpegpyetc
++777 baryogenetecist
++999 xosecretdreamstage
 
-https://automatetheboringstuff.com/chapter17/
+2016/4/15
+
++000 overlord
++111 linearAlgebra research
++666 eye ffmpegpyetc
++777 baryogenetecist
++999 xosecretdreamstage
 
 
 
 ::balance::
-000 - 1
+000 - 2
 111 - 1
-222 - 4
-333 - 2
-444 - 2
+222 - 5
+333 - 3
+444 - 5
 555 - 0
-666 - 11
-777 - 10
+666 - 15
+777 - 13
 888 - 0
-999 - 8
+999 - 10
 
-((4/10))
+((4/14))
 
 
 
