@@ -24,13 +24,9 @@ import scipy as sp
 from scipy import ndimage
 from scipy import misc
 from PIL import Image
-import matplotlib.pyplot as plt
-
 
 from odmkClear import *
 import odmkClocks as clks
-
-
 
 # temp python debugger - use >>>pdb.set_trace() to set break
 import pdb
@@ -70,7 +66,7 @@ def importAllJpg(srcDir):
             imgObjList.append(imgObjTemp)
     imgCount = len(imgSrcList)
     print('\nFound '+str(imgCount)+' images in the folder:\n')
-    print(imgSrcList)
+    print(imgSrcList[0]+' ... '+imgSrcList[-1])
     print('\nCreated python lists:')
     print('<<imgObjList>> (ndimage objects)')
     print('<<imgSrcList>> (img names)\n')
@@ -146,29 +142,31 @@ def odmkEyeZoom(img, Z):
     return imgZoom
 
 
-def odmkCenterPxl(img):
-    imgWidth = img.shape[1]
-    imgHeight = img.shape[0]
-    cPxl_x = floor(imgWidth / 2)
-    cPxl_y = floor(imgHeight / 2)
-    centerPxl = [cPxl_x, cPxl_y]
-    return centerPxl
+# *---FIXIT---*
 
-
-def odmkHelixPxl(vLength, theta):
-    helixPxlArray = []
-    # generate a vector of 'center pixels' moving around unit circle
-    # quantized cyclicZn coordinates!
-    # theta = angle of rotation per increment
-    return helixPxlArray
-
-
-def odmkFiboPxl(vLength, theta):
-    fiboPxlArray = []
-    # generate a vector of 'center pixels' tracing a fibonnaci spiral
-    # quantized fibonnaci coordinates!
-    # theta = angle of rotation per increment
-    return fiboPxlArray
+#def odmkCenterPxl(img):
+#    imgWidth = img.shape[1]
+#    imgHeight = img.shape[0]
+#    cPxl_x = floor(imgWidth / 2)
+#    cPxl_y = floor(imgHeight / 2)
+#    centerPxl = [cPxl_x, cPxl_y]
+#    return centerPxl
+#
+#
+#def odmkHelixPxl(vLength, theta):
+#    helixPxlArray = []
+#    # generate a vector of 'center pixels' moving around unit circle
+#    # quantized cyclicZn coordinates!
+#    # theta = angle of rotation per increment
+#    return helixPxlArray
+#
+#
+#def odmkFiboPxl(vLength, theta):
+#    fiboPxlArray = []
+#    # generate a vector of 'center pixels' tracing a fibonnaci spiral
+#    # quantized fibonnaci coordinates!
+#    # theta = angle of rotation per increment
+#    return fiboPxlArray
 
 
 def odmkEyeCrop(img, SzX, SzY, high):
@@ -360,21 +358,82 @@ def odmkScaleAll(srcObjList, SzX, SzY, w=0, high=0, outDir='None', outName='None
     return [imgScaledArray, imgScaledNmArray]
 
 
-# -----------------------------------------------------------------------------
-# img Post-processing func
-# -----------------------------------------------------------------------------
+# // *********************************************************************** //
+# // *---::ODMK img Post-processing func::---*
+# // *********************************************************************** //
+
+
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - repeat list of files in directory n times::---*
+# // *--------------------------------------------------------------* //
+
+def repeatDir(srcDir, n, w=0, repeatDir='None', repeatName='None'):
+    ''' repeats a list of .jpg images in srcDir n times,
+        duplicates and renames all files in the source directory.
+        The new file names are formatted for processing with ffmpeg
+        if w = 1, write files into output directory.
+        if concatDir specified, change output dir name.
+        if concatName specified, change output file names'''
+
+    # check write condition, if w=0 ignore outDir
+    if w == 0 and repeatDir != 'None':
+        print('Warning: write = 0, outDir ignored')
+    if w == 1:
+        if repeatDir == 'None':
+            print('Warning: if w=1, repeatDir must be specified; processed img will not be saved')
+            w = 0
+        else:
+            # If Dir does not exist, makedir:
+            os.makedirs(repeatDir, exist_ok=True)
+
+    [imgObjList, imgSrcList] = importAllJpg(srcDir)
+
+    if repeatName != 'None':
+        reName = repeatName
+    else:
+        reName = 'imgRepeat'
+
+    imgRepeatObjList = []
+    imgRepeatSrcList = []
+    imgCount = len(imgObjList) * n
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    for i in range(n):
+        for j in range(len(imgObjList)):
+            nextInc += 1
+            zr = ''
+            for h in range(n_digits - len(str(nextInc))):
+                zr += '0'
+            strInc = zr+str(nextInc)
+            imgRepeatNm = reName+strInc+'.jpg'
+            # append new name to imgConcatSrcList
+            imgRepeatSrcList.append(imgSrcList[j].replace(imgSrcList[j], imgRepeatNm))
+            imgRepeatObjList.append(imgObjList[j])
+            if w == 1:
+                imgRepeatNmFull = repeatDir+imgRepeatNm
+                misc.imsave(imgRepeatNmFull, imgRepeatObjList[j])
+
+    return [imgRepeatObjList, imgRepeatSrcList]
+
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - concat all files in directory list::---*
+# // *--------------------------------------------------------------* //
+
 
 def concatAllDir(dirList, w=0, concatDir='None', concatName='None'):
     ''' Takes a list of directories containing .jpg images,
-        renames and concatenates all files into new output directory.
-        The new file names are formatted for processing with ffmpeg'''
+        renames and concatenates all files into new arrays.
+        The new file names are formatted for processing with ffmpeg
+        if w = 1, write files into output directory.
+        if concatDir specified, change output dir name.
+        if concatName specified, change output file names'''
 
     # check write condition, if w=0 ignore outDir
     if w == 0 and concatDir != 'None':
         print('Warning: write = 0, outDir ignored')
     if w == 1:
         if concatDir == 'None':
-            print('Error: outDir must be specified; processed img will not be saved')
+            print('Warning: if w=1, concatDir must be specified; processed img will not be saved')
             w = 0
         else:
             # If Dir does not exist, makedir:
@@ -408,7 +467,6 @@ def concatAllDir(dirList, w=0, concatDir='None', concatName='None'):
             imgConcatObjList.append(imgObjList[k])
 
     # normalize image index n_digits to allow for growth
-    #pdb.set_trace()
     imgCount = len(imgConcatSrcList)
     n_digits = int(ceil(np.log10(imgCount))) + 2
     nextInc = 0
@@ -424,19 +482,19 @@ def concatAllDir(dirList, w=0, concatDir='None', concatName='None'):
         imgConcatSrcList[i] = imgConcatSrcList[i].replace(imgConcatSrcList[i], imgNormalizeNm)
         # print('imgConcatSrcList[i] = '+str(imgConcatSrcList[i]))
         if w == 1:
-            imgScaledFull = concatDir+imgNormalizeNm
-            misc.imsave(imgScaledFull, imgConcatObjList[i])
+            imgConcatNmFull = concatDir+imgNormalizeNm
+            misc.imsave(imgConcatNmFull, imgConcatObjList[i])
 
     return [imgConcatObjList, imgConcatSrcList]
 
 
 # // *********************************************************************** //
-# ODMK img Pixel-Banging Algorithms
+# // *---::ODMK img Pixel-Banging Algorithms::---*
 # // *********************************************************************** //
 
 
 # // *--------------------------------------------------------------* //
-# // *---::ODMKEYE - Image Random Select Algorithm::---*')
+# // *---::ODMKEYE - Image Random Select Algorithm::---*
 # // *--------------------------------------------------------------* //
 
 def odmkImgRndSel(imgList, numFrames, imgOutDir, imgOutNm='None'):
@@ -446,8 +504,8 @@ def odmkImgRndSel(imgList, numFrames, imgOutDir, imgOutNm='None'):
     else:
         imgRndSelNm = 'imgRndSelOut'
 
-    #imgRndSelNmArray = []
-    #imgRndSelArray = []
+    imgRndSelNmArray = []
+    imgRndSelArray = []
     
     rIdxArray = randomIdx(numFrames, len(imgList))
     
@@ -464,7 +522,7 @@ def odmkImgRndSel(imgList, numFrames, imgOutDir, imgOutNm='None'):
         imgRndSelFull = imgOutDir+imgNormalizeNm
         misc.imsave(imgRndSelFull, imgList[rIdxArray[i]])
         
-    return
+    return [imgRndSelArray, imgRndSelNmArray]
 
 
 # // *--------------------------------------------------------------* //
@@ -481,6 +539,8 @@ def odmkImgRotateSeq(imgSrc, numFrames, imgOutDir, imgOutNm='None'):
         imgRotateSeqNm = imgOutNm
     else:
         imgRotateSeqNm = 'imgRotateSeqOut'
+
+    zn = cyclicZn(numFrames)
 
     imgRotNmArray = []
     imgRotArray = []
@@ -500,7 +560,94 @@ def odmkImgRotateSeq(imgSrc, numFrames, imgOutDir, imgOutNm='None'):
         misc.imsave(imgRotateSeqFull, rotate_gz1)
         imgRotNmArray.append(imgRotateSeqFull)
         imgRotArray.append(rotate_gz1)
-    return
+
+    return [imgRotArray, imgRotNmArray]
+
+
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - Image CrossFade Sequence Algorithm::---*')
+# // *--------------------------------------------------------------* //    
+    
+def odmkImgXfade(imgList, numFrames, imgOutDir, imgOutNm='None'):
+    ''' outputs a sequence of images fading from img1 -> img2
+        Linearly alpha-blends images using PIL Image.blend
+        assume images in imgList are numpy arrays'''
+
+    if imgOutNm != 'None':
+        imgXfadeNm = imgOutNm
+    else:
+        imgXfadeNm = 'imgRotateSeqOut'
+
+    numImg = len(imgList)
+    imgCount = numFrames * (numImg - 1)
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    alphaX = np.linspace(0.0, 1.0, numFrames)
+
+    imgXfadeNmArray = []
+    imgXfadeArray = []
+
+    for j in range(numImg - 1):
+        imgPIL1 = Image.fromarray(imgList[j])
+        imgPIL2 = Image.fromarray(imgList[j + 1])
+        for i in range(numFrames):
+            alphaB = Image.blend(imgPIL1, imgPIL2, alphaX[i])
+            nextInc += 1
+            zr = ''
+            for j in range(n_digits - len(str(nextInc))):
+                zr += '0'
+            strInc = zr+str(nextInc)
+            imgXfadeFull = imgOutDir+imgXfadeNm+strInc+'.jpg'
+            misc.imsave(imgXfadeFull, alphaB)
+            imgXfadeNmArray.append(imgXfadeFull)
+            imgXfadeArray.append(alphaB)
+
+    return [imgXfadeArray, imgXfadeNmArray]
+
+
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - Image Division CrossFade Sequence Algorithm::---*
+# // *--------------------------------------------------------------* //
+
+def odmkImgDivXfade(imgList, numFrames, imgOutDir, imgOutNm='None'):
+    ''' outputs a sequence of images fading from img1 -> img2
+        Experimental Division Blending images using numpy
+        assume images in imgList are numpy arrays'''
+
+    if imgOutNm != 'None':
+        imgDivXfadeNm = imgOutNm
+    else:
+        imgDivXfadeNm = 'imgDivXfade'
+
+    numImg = len(imgList)
+    imgCount = numFrames * (numImg - 1)
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    alphaX = np.linspace(0.0001, 1.0, numFrames)
+
+    imgDivXfadeNmArray = []
+    imgDivXfadeArray = []
+
+    for j in range(numImg - 1):
+        imgPIL1 = imgList[j]
+        imgPIL2 = imgList[j + 1]
+        for i in range(numFrames):
+            # image division blend algorithm..
+            c = imgPIL1/((imgPIL2.astype('float')+1)/(256*alphaX[i]))
+            # saturating function - if c[m,n] > 255, set to 255:
+            imgDIVB = c*(c < 255)+255*np.ones(np.shape(c))*(c > 255)
+            nextInc += 1
+            zr = ''
+            for j in range(n_digits - len(str(nextInc))):
+                zr += '0'
+            strInc = zr+str(nextInc)
+            imgDivXfadeFull = imgOutDir+imgDivXfadeNm+strInc+'.jpg'
+            misc.imsave(imgDivXfadeFull, imgDIVB)
+            imgDivXfadeNmArray.append(imgDivXfadeFull)
+            imgDivXfadeArray.append(imgDIVB)
+
+    return [imgDivXfadeArray, imgDivXfadeNmArray]
+
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
@@ -616,8 +763,12 @@ print('// *--------------------------------------------------------------* //')
 
 eyeClks = clks.odmkClocks(xLength, fs, bpm, framesPerSec)
 
+
+# example: num frames per beat (quantized)
+# fpb = int(np.ceil(eyeClks.framesPerBeat))
+
 # example: simple sequence -> downFrames (1 on downbeat frame, o elsewhere)
-# eyeDFrames = eyeCks.clkDownFrames()
+# eyeDFrames = eyeClks.clkDownFrames()
 
 print('\n')
 print('// *--------------------------------------------------------------* //')
@@ -739,7 +890,7 @@ jpgSrcDir = rootDir+'process/'
 # // *********************************************************************** //
 # // *********************************************************************** //
 
-# ***GOOD***
+# *****CHECKIT*****
 # *-----BYPASS BEGIN-----*
 
 #print('\n')
@@ -762,7 +913,7 @@ jpgSrcDir = rootDir+'process/'
 #frameRate = 30
 #numFrames = eyeLength * frameRate
 #
-#odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
+#[imgRndSelOutA, imgRndSelNmA] = odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
 #
 #print('// *--------------------------------------------------------------* //')
 
@@ -780,6 +931,8 @@ jpgSrcDir = rootDir+'process/'
 
 # *-----BYPASS BEGIN-----*
 
+# ****FIXIT*****
+
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
 #print('// *---::ODMKEYE - Image Random BPM Algorithm::---*')
@@ -793,18 +946,18 @@ jpgSrcDir = rootDir+'process/'
 #eyeDFrames = eyeCks.clkDownFrames()
 #
 ## output dir where processed img files are stored:
-#imgRndSeldir = rootDir+'exp7/'
+#imgRndBpmdir = rootDir+'exp7/'
 ## If Dir does not exist, makedir:
-#os.makedirs(imgRndSeldir, exist_ok=True)
+#os.makedirs(imgRndBpmdir, exist_ok=True)
 #
-#imgRndSelNm = 'imgRndSelOut'
+#imgRndSelNm = 'imgRndBpmOut'
 #
 ## final video length in seconds
 #eyeLength = 13
 #frameRate = 30
 #numFrames = eyeLength * frameRate
 #
-#odmkImgRndSel(processObjList, numFrames, imgRndSeldir, imgOutNm='Gorgulan')
+#[imgRndBpmOutA, imgRndBpmNmA] =  odmkImgRndSel(processObjList, numFrames, imgRndBpmdir, imgOutNm='Gorgulan')
 #
 #print('// *--------------------------------------------------------------* //')
 
@@ -819,7 +972,7 @@ jpgSrcDir = rootDir+'process/'
 # // *********************************************************************** //
 # // *********************************************************************** //
 
-# ***GOOD***
+# ***GOOD -> FUNCTIONALIZEIT***
 # *-----BYPASS BEGIN-----*
 
 #print('\n')
@@ -904,6 +1057,8 @@ jpgSrcDir = rootDir+'process/'
 
 # *-----BYPASS BEGIN-----*
 
+# *****CHECKIT*****
+
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
 #print('// *---::Output a sequence of rotates images, period = numFrames::---*')
@@ -912,7 +1067,7 @@ jpgSrcDir = rootDir+'process/'
 #
 ## num_gz = 192
 #numFrames = 111
-#zn = cyclicZn(numFrames)
+## zn = cyclicZn(numFrames) -- called in func
 #
 #imgSrc = processScaledArray[9]
 #
@@ -920,7 +1075,7 @@ jpgSrcDir = rootDir+'process/'
 #os.makedirs(outDir, exist_ok=True)
 #outNm = 'imgRotate'
 #
-#odmkImgRotateSeq(imgSrc, numFrames, outDir, imgOutNm=outNm)
+#[imgRotArray, imgRotNmArray] = odmkImgRotateSeq(imgSrc, numFrames, outDir, imgOutNm=outNm)
 
 # *-----BYPASS END-----*
 
@@ -933,6 +1088,8 @@ jpgSrcDir = rootDir+'process/'
 # // *---------------------------------------------------------------------* //
 # // *--Incremental Rotate & alternate--*
 # // *---------------------------------------------------------------------* //
+
+# *****FUNCTIONALIZEIT*****
 
 ## ex, rotate image by 45 deg:
 ## rotate_gz1 = ndimage.rotate(gz1, 45, reshape=False)
@@ -975,107 +1132,175 @@ jpgSrcDir = rootDir+'process/'
 # // *********************************************************************** //
 # // *********************************************************************** //
 
-# // *---------------------------------------------------------------------* //
-# // *--Eye COS Crossfader--*
-# // *---------------------------------------------------------------------* //
+# *-----BYPASS BEGIN-----*
 
-# crossfade between two images using cos windows for constant power out:
-# rotate_gz1 = ndimage.rotate(gz1, 45, reshape=False)
+# *****CHECKIT*****
 
-# dir where processed img files are stored:
-# srcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeSrcExp23/'
-srcCrossDir = rootDir+'eyeSrcExp23/'
-outCrossDir = rootDir+'eyeCrossOut/'
-os.makedirs(outCrossDir, exist_ok=True)
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMK Image CrossFade Sequencer::---*
+#print('// *---Crossfade a sequence of images, period = framesPerBeat---*')
+#print('// *--------------------------------------------------------------* //')
 
-[imgSrcObj, imgSrcObjNm] = importAllJpg(srcCrossDir)
-
-a = imgSrcObj[1]
-b = imgSrcObj[0]
-
-
-
-
-# image division blend algorithm..
-c = a/((b.astype('float')+1)/256)
-# saturating function - if c[m,n] > 255, set to 255:
-d = c*(c < 255)+255*np.ones(np.shape(c))*(c > 255)
-
-eyeDivMixFull = outCrossDir+'eyeDivMix.jpg'
-misc.imsave(eyeDivMixFull, d)
-
-
-# ***
-# convert from Image image to Numpy array:
-# arr = array(img)
-
-# convert from Numpy array to Image image:
-# img = Image.fromarray(array)
-
-
-#aImg = Image.open(srcCrossDir+'gorgulan0011.jpg')
-#bImg = Image.open(srcCrossDir+'gorgulan0012.jpg')
-
-aImg = Image.fromarray(a)
-bImg = Image.fromarray(b)
-
-eyeAlphaBlendFull = outCrossDir+'eyeAlphaB.jpg'
-
-alphaB1 = Image.blend(aImg, bImg, 0.1)
-misc.imsave(eyeAlphaBlendFull, alphaB1)
-alphaB2 = Image.blend(aImg, bImg, 0.3)
-misc.imsave(eyeAlphaBlendFull, alphaB2)
-alphaB3 = Image.blend(aImg, bImg, 0.5)
-misc.imsave(eyeAlphaBlendFull, alphaB3)
-alphaB4 = Image.blend(aImg, bImg, 0.7)
-misc.imsave(eyeAlphaBlendFull, alphaB4)
-alphaB5 = Image.blend(aImg, bImg, 0.9)
-misc.imsave(eyeAlphaBlendFull, alphaB5)
-
-
-
-
-
-
-# num_gz = 192
-#num_gz = 256
-#zn = cyclicZn(num_gz)
-
-# initialize a 1/4 period Cos window
-#winCosXfade = quarterCos(num_gz)
-
-#gzCosxA_r = gzScaledArray[0][:, :, 0]
-#gzCosxA_g = gzScaledArray[0][:, :, 1]
-#gzCosxA_b = gzScaledArray[0][:, :, 2]
+#srcXfadeDir = rootDir+'eyeSrcExp23/'
+#outXfadeDir = rootDir+'eyeXfadeOut/'
+#os.makedirs(outXfadeDir, exist_ok=True)
 #
-#gzCosxB_r = gzScaledArray[1][:, :, 0]
-#gzCosxB_g = gzScaledArray[1][:, :, 1]
-#gzCosxB_b = gzScaledArray[1][:, :, 2]
+#[imgSrcObj, imgSrcObjNm] = importAllJpg(srcXfadeDir)
 #
-##imgZoom = np.dstack((imgZoom_r, imgZoom_g, imgZoom_b))
+#framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
 #
+#[xfadeOutA, xfadeOutNmA] = odmkImgXfade(imgSrcObj, framesPerBeat, outXfadeDir, imgOutNm='gorgulanXfade')
 #
-#gzAHalf_r = 1.5 * gzCosxA_r
-#gzAHalf_g = 1.5 * gzCosxA_g
-#gzAHalf_b = 1.5 * gzCosxA_b
-#gzAHalf_recon = np.dstack((gzAHalf_r, gzAHalf_g, gzAHalf_b))
+#[xfadeRepeatA, xfadeRepeatNmA] = repeatDir(outXfadeDir, 3, w=1, repeatDir=rootDir+'eyeXfadeRepeat/', repeatName='eyeXfadeR')
 #
-#gzAHalf_reconFull = gzdir+'gzAHalf_recon.jpg'
-#misc.imsave(gzAHalf_reconFull, gzAHalf_recon)
+#print('\nodmkImgDivXfade function output => Created python lists:')
+#print('<<<xfadeOutA>>>   (ndimage objects)')
+#print('<<<xfadeOutNmA>>> (img names)')
 #
-#gzBHalf_r = 0.5 * gzCosxB_r
-#gzBHalf_g = 0.5 * gzCosxB_g
-#gzBHalf_b = 0.5 * gzCosxB_b
-#gzBHalf_recon = np.dstack((gzBHalf_r, gzBHalf_g, gzBHalf_b))
+#print('\nrepeatDir function output => Created python lists:')
+#print('<<<xfadeRepeatA>>>   (ndimage objects)')
+#print('<<<xfadeRepeatNmA>>> (img names)')
 #
-#gzBHalf_reconFull = gzdir+'gzBHalf_recon.jpg'
-#misc.imsave(gzBHalf_reconFull, gzBHalf_recon)
+#print('\noutput processed img to the following directory:')
+#print(rootDir+'eyeXfadeRepeat')
 #
-#gzMix_r = gzAHalf_r + gzBHalf_r
-#gzMix_g = gzAHalf_g + gzBHalf_g
-#gzMix_b = gzAHalf_g + gzBHalf_b
-#gzMix_recon = np.dstack((gzMix_r, gzMix_g, gzMix_b))
+#print('// *--------------------------------------------------------------* //')
 
+# *-----BYPASS END-----*
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+# *-----BYPASS BEGIN-----*
+
+# *****CURRENT=GOOD / CHECK ALT PARAMS*****
+
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMK Divide CrossFade Sequencer::---*')
+#print('// *---Divide Crossfade a sequence of images, period = framesPerBeat-*')
+#print('// *--------------------------------------------------------------* //')
+#
+#srcDivXfadeDir = rootDir+'eyeSrcExp23/'
+#outDivXfadeDir = rootDir+'eyeDivXfadeOut/'
+#os.makedirs(outDivXfadeDir, exist_ok=True)
+#
+#[imgSrcObj, imgSrcObjNm] = importAllJpg(srcDivXfadeDir)
+#
+#framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
+#
+#[divXfadeOutA, divXfadeOutNmA] = odmkImgDivXfade(imgSrcObj, framesPerBeat, outDivXfadeDir, imgOutNm='eyeDivXfade')
+#
+#[divXfadeRepeatA, divXfadeRepeatNmA] = repeatDir(outDivXfadeDir, 3, w=1, repeatDir=rootDir+'eyeDivXfadeRepeat/', repeatName='eyeDivXfadeR')
+#
+#print('\nodmkImgDivXfade function output => Created python lists:')
+#print('<<<divXfadeOutA>>>   (ndimage objects)')
+#print('<<<divXfadeOutNmA>>> (img names)')
+#
+#print('\nrepeatDir function output => Created python lists:')
+#print('<<<divXfadeRepeatA>>>   (ndimage objects)')
+#print('<<<divXfadeRepeatNmA>>> (img names)')
+#
+#print('\noutput processed img to the following directory:')
+#print(rootDir+'eyeDivXfadeRepeat')
+#
+#print('// *--------------------------------------------------------------* //')
+
+# *-----BYPASS END-----*
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - Image CrossFade Rotate Sequencer::---*')
+# // *--------------------------------------------------------------* //
+
+
+# *-----BYPASS BEGIN-----*
+
+# *****CURRENT*****
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::ODMK Image CrossFade Rotate::---*')
+print('// *---Crossfade & Rotate a sequence of images---*')
+print('// *---sequence period = framesPerBeat---*')
+print('// *--------------------------------------------------------------* //')
+
+srcXfadeRotDir = rootDir+'eyeSrcExp23/'
+outXfadeRotDir = rootDir+'eyeXfadeRotOut/'
+os.makedirs(outXfadeRotDir, exist_ok=True)
+
+[imgSrcObj, imgSrcObjNm] = importAllJpg(srcXfadeRotDir)
+
+framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
+
+
+def odmkImgXfadeRot(imgList, numFrames, imgOutDir, imgOutNm='None'):
+    ''' outputs a sequence of images fading from img1 -> img2
+        Linearly alpha-blends images using PIL Image.blend
+        assume images in imgList are numpy arrays '''
+
+    if imgOutNm != 'None':
+        imgXfadeRotNm = imgOutNm
+    else:
+        imgXfadeRotNm = 'imgXfadeRot'
+
+    zn = cyclicZn(numFrames)
+
+    numImg = len(imgList)
+    imgCount = numFrames * (numImg - 1)
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    alphaX = np.linspace(0.0, 1.0, numFrames)
+
+    imgXfadeRotNmArray = []
+    imgXfadeRotArray = []
+
+    for j in range(numImg - 1):
+        imgPIL1 = Image.fromarray(imgList[j])
+        imgPIL2 = Image.fromarray(imgList[j + 1])
+        for i in range(numFrames):
+            alphaB = Image.blend(imgPIL1, imgPIL2, alphaX[i])
+
+            ang = (atan2(zn[i].imag, zn[i].real))*180/np.pi
+            rotate_alphaB = ndimage.rotate(alphaB, ang, reshape=False)
+
+            nextInc += 1
+            zr = ''
+            for j in range(n_digits - len(str(nextInc))):
+                zr += '0'
+            strInc = zr+str(nextInc)
+            imgXfadeRotFull = imgOutDir+imgXfadeRotNm+strInc+'.jpg'
+            misc.imsave(imgXfadeRotFull, rotate_alphaB)
+            imgXfadeRotNmArray.append(imgXfadeRotFull)
+            imgXfadeRotArray.append(alphaB)
+
+    return [imgXfadeRotArray, imgXfadeRotNmArray]
+
+
+[xfadeRotOutA, xfadeRotOutNmA] = odmkImgXfadeRot(imgSrcObj, framesPerBeat, outXfadeRotDir, imgOutNm='eyeXfadeRot')
+
+[xfadeRotRepeatA, xfadeRotRepeatNmA] = repeatDir(outXfadeRotDir, 3, w=1, repeatDir=rootDir+'eyeXfadeRotRepeat/', repeatName='eyeXfadeRotR')
+
+print('\nodmkImgXfadeRot function output => Created python lists:')
+print('<<<xfadeRotOutA>>>   (ndimage objects)')
+print('<<<xfadeRotOutNmA>>> (img names)')
+
+print('\nrepeatDir function output => Created python lists:')
+print('<<<xfadeRotRepeatA>>>   (ndimage objects)')
+print('<<<xfadeRotRepeatNmA>>> (img names)')
+
+print('\noutput processed img to the following directory:')
+print(rootDir+'eyeXfadeRotRepeat')
+
+print('// *--------------------------------------------------------------* //')
+
+# *-----BYPASS END-----*
 
 # // *********************************************************************** //
 # // *********************************************************************** //
@@ -1181,7 +1406,14 @@ misc.imsave(eyeAlphaBlendFull, alphaB5)
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
 # ***GOOD***
+
+# *-----BYPASS BEGIN-----*
 
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
@@ -1213,6 +1445,11 @@ misc.imsave(eyeAlphaBlendFull, alphaB5)
 #
 #print('// *--------------------------------------------------------------* //')
 
+# *-----BYPASS END-----*
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
@@ -1221,26 +1458,48 @@ misc.imsave(eyeAlphaBlendFull, alphaB5)
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
-# // *---------------------------------------------------------------------* //
-
-# plt.show()
-
 print('\n')
 print('// *--------------------------------------------------------------* //')
 print('// *---::done::---*')
 print('// *--------------------------------------------------------------* //')
 
-# // *---------------------------------------------------------------------* //
 
-# // *---------------------------------------------------------------------* //
-# experimental algorithms
+# /////////////////////////////////////////////////////////////////////////////
+# #############################################################################
+# Notes:
+# #############################################################################
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-# *** Figure out frame-rate <=> sample-rate synchronization
+
+## image division blend algorithm..
+#c = a/((b.astype('float')+1)/256)
+## saturating function - if c[m,n] > 255, set to 255:
+#d = c*(c < 255)+255*np.ones(np.shape(c))*(c > 255)
+#
+#eyeDivMixFull = outXfadeDir+'eyeDivMix.jpg'
+#misc.imsave(eyeDivMixFull, d)
+
+# ***End: division blend ALT algorithm***
+
+
+# ***
+# convert from Image image to Numpy array:
+# arr = array(img)
+
+# convert from Numpy array to Image image:
+# img = Image.fromarray(array)
+
+
+# /////////////////////////////////////////////////////////////////////////////
+# #############################################################################
+# Experimental:
+# #############################################################################
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 
 # *** Add sound clip synched to each pixelbang itr
 # *** add complete soundtrack synched to frame-rate
 
-# create util func to generate random list of img in dir
 # create util func to reverse numbering of img
 
 # *** randomly select pixelbang algorithm for each itr

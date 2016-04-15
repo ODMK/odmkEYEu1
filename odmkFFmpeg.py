@@ -19,7 +19,6 @@
 import os
 from math import ceil
 import numpy as np
-import matplotlib.pyplot as plt
 
 # from subprocess import check_output, check_call
 from subprocess import check_call
@@ -66,7 +65,7 @@ print('// *--------------------------------------------------------------* //')
 print('// *---::Search for .jpg images in eyeSrcDir directory::---*')
 print('// *--------------------------------------------------------------* //')
 
-eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp6/'
+eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeXfadeRotRepeat/'
 # eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/imgConcatExp/'
 # eyeOutDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/ffmpegOut/'
 
@@ -87,7 +86,7 @@ try:
         print('\nCreated numpy array: <<imgSrcList>>\n')
 except OSError:
     print('\nError: directory:\n'+eyeSrcDir+'\ncannot be found\n')
-    
+
 print('// *--------------------------------------------------------------* //')
 
 print('\n')
@@ -97,7 +96,6 @@ print('// *--------------------------------------------------------------* //')
 
 
 earSrc = 'C:/usr/eschei/odmkPython/odmk/audio/wavSrc/tonzuraTBE01.wav'
-
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -149,8 +147,6 @@ check_call(movie_cmd)
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 # // *---------------------------------------------------------------------* //
-
-#plt.show()
 
 print('\n')
 print('// *--------------------------------------------------------------* //')
