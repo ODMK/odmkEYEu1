@@ -67,10 +67,10 @@ def importAllJpg(srcDir):
     imgCount = len(imgSrcList)
     print('\nFound '+str(imgCount)+' images in the folder:\n')
     print(imgSrcList[0]+' ... '+imgSrcList[-1])
-    print('\nCreated python lists:')
-    print('<<imgObjList>> (ndimage objects)')
-    print('<<imgSrcList>> (img names)\n')
-    print('// *--------------------------------------------------------------* //')
+    # print('\nCreated python lists:')
+    # print('<<imgObjList>> (ndimage objects)')
+    # print('<<imgSrcList>> (img names)\n')
+    # print('// *--------------------------------------------------------------* //')
 
     return [imgObjList, imgSrcList]
 
@@ -204,6 +204,7 @@ def odmkEyeCrop(img, SzX, SzY, high):
             hdiff_ths = hdiff / 2
             # hdiff_bhs = hdiff / 2
 
+    #imgItr = 0    # ***remove***
     for j in range(SzY):
         for k in range(SzX):
             if high == 1:
@@ -211,11 +212,12 @@ def odmkEyeCrop(img, SzX, SzY, high):
                 imgCrop_g[j, k] = img_g[j, k + wdiff_lhs]
                 imgCrop_b[j, k] = img_b[j, k + wdiff_lhs]
             else:
-                
                 imgCrop_r[j, k] = img_r[j + hdiff_ths, k + wdiff_lhs]
                 imgCrop_g[j, k] = img_g[j + hdiff_ths, k + wdiff_lhs]
                 imgCrop_b[j, k] = img_b[j + hdiff_ths, k + wdiff_lhs]
-        #pdb.set_trace()
+        #if j == SzY - 1:
+            #imgItr += 1
+            #print('imgItr = '+str(imgItr))
     imgCrop = np.dstack((imgCrop_r, imgCrop_g, imgCrop_b))
     return imgCrop
 
@@ -225,6 +227,8 @@ def odmkEyeDim(img, SzX, SzY, high):
     
     imgWidth = img.shape[1]
     imgHeight = img.shape[0]
+    
+    #pdb.set_trace()
 
     if (imgWidth == SzX and imgHeight == SzY):
         # no processing
@@ -243,7 +247,7 @@ def odmkEyeDim(img, SzX, SzY, high):
         wdiff = imgWidth - SzX
         hdiff = imgHeight - SzY
         #minDiff = min(wdiff, hdiff)
-        if wdiff >= hdiff:
+        if wdiff <= hdiff:
             zoomFactor = (imgWidth - wdiff) / imgWidth
         else:
             zoomFactor = (imgHeight - hdiff) / imgHeight
@@ -800,8 +804,8 @@ print('// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ //')
 # // *---------------------------------------------------------------------* //
 
 
-rootDir = 'C:/Users/djoto-odmk/odmk-sci/odmk_code/odmkPython/eye/odmkSrc/'
-#rootDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/'
+# rootDir = 'C:/Users/djoto-odmk/odmk-sci/odmk_code/odmkPython/eye/odmkSrc/'
+rootDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/'
 
 
 # If Dir does not exist, makedir:
@@ -859,15 +863,15 @@ print('// *--------------------------------------------------------------* //')
 #mstrSzX = 1076
 #mstrSzY = 666
 
-mstrSzX = 1257
-mstrSzY = 777
+#mstrSzX = 1257
+#mstrSzY = 777
 
 #mstrSzX = 1436
 #mstrSzY = 888
 
 # Standard video aspect ratio
-#mstrSzX = 1280
-#mstrSzY = 960
+mstrSzX = 1280
+mstrSzY = 960
 
 
 print('\nOutput frame width = '+str(mstrSzX))
@@ -904,11 +908,18 @@ print('// *--------------------------------------------------------------* //')
 
 # process raw .jpg folder
 
-#jpgSrcDir = rootDir+'process/'
-#jpgSrcDir = rootDir+'kei777/'
-jpgSrcDir = rootDir+'kroztest/'
+# jpgSrcDir = rootDir+'process/'
+# jpgSrcDir = rootDir+'kei777/'
+# jpgSrcDir = rootDir+'kroztest/'
+jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
 
 [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+
+print('\nCreated python lists:')
+print('<<processObjList>> (img data objects)')
+print('<<processSrcList>> (img names)\n')
+
+print('// *--------------------------------------------------------------* //')
 
 # *-----BYPASS END-----*
 
@@ -918,26 +929,27 @@ jpgSrcDir = rootDir+'kroztest/'
 
 # *-----BYPASS BEGIN-----*
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::Scale all imgages in img obj array::---*')
-print('// *--------------------------------------------------------------* //')
-
-processScaleDir = rootDir+'keiroz777/'
-os.makedirs(processScaleDir, exist_ok=True)
-
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=1, outDir=gorgulanDir, outName='gorgulan')
-[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=0, outDir=processScaleDir, outName='keiroz777')
-
-print('\nCreated python lists:')
-print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
-
-print('Saved Scaled images to the following location:')
-print(processScaleDir)
-print('\n')
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::Scale all imgages in img obj array::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## define output directory for scaled img
+#processScaleDir = rootDir+'keiroz777/'
+#os.makedirs(processScaleDir, exist_ok=True)
+#
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
+##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=1, outDir=gorgulanDir, outName='gorgulan')
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=0, outDir=processScaleDir, outName='keiroz777')
+#
+#print('\nCreated python lists:')
+#print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
+#
+#print('Saved Scaled images to the following location:')
+#print(processScaleDir)
+#print('\n')
 
 # *-----BYPASS END-----*
 
@@ -981,29 +993,37 @@ print('\n')
 # *****CHECKIT*****
 # *-----BYPASS BEGIN-----*
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::ODMKEYE - Image Random Select Algorithm::---*')
-print('// *--------------------------------------------------------------* //')
-
-# for n frames:
-# randomly select an image from the source dir, hold for h frames
-
-# output dir where processed img files are stored:
-imgRndSeldir = rootDir+'processScaleDir/'
-# If Dir does not exist, makedir:
-os.makedirs(imgRndSeldir, exist_ok=True)
-
-imgRndSelNm = 'imgRndSelOut'
-
-# final video length in seconds
-eyeLength = 13
-frameRate = 30
-numFrames = eyeLength * frameRate
-
-[imgRndSelOutA, imgRndSelNmA] = odmkImgRndSel(processScaledArray, numFrames, imgRndSeldir, imgOutNm='keiroz777')
-
-print('// *--------------------------------------------------------------* //')
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMKEYE - Image Random Select Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## for n frames:
+## randomly select an image from the source dir, hold for h frames
+#
+## output dir where processed img files are stored:
+#imgRndSeldir = rootDir+'imgRndSelOutDir/'
+## If Dir does not exist, makedir:
+#os.makedirs(imgRndSeldir, exist_ok=True)
+#
+#imgRndSelNm = 'imgRndSelOut'
+#
+## final video length in seconds
+#eyeLength = 13
+#frameRate = 30
+#numFrames = eyeLength * frameRate
+#
+##[imgRndSelOutA, imgRndSelNmA] = odmkImgRndSel(processScaledArray, numFrames, imgRndSeldir, imgOutNm='keiroz777')
+#[imgRndSelOutA, imgRndSelNmA] = odmkImgRndSel(processScaledArray, numFrames, imgRndSeldir, imgOutNm='schei777')
+#
+#print('\nodmkImgRndSel function output => Created python lists:')
+#print('<<<imgRndSelOutA>>>   (ndimage objects)')
+#print('<<<imgRndSelNmA>>> (img names)')
+#
+#print('\noutput processed img to the following directory:')
+#print(imgRndSeldir)
+#
+#print('// *--------------------------------------------------------------* //')
 
 # *-----BYPASS END-----*
 
@@ -1394,8 +1414,109 @@ print('// *--------------------------------------------------------------* //')
 # // *********************************************************************** //
 # // *********************************************************************** //
 
-# ***GOOD***
+# *-----BYPASS BEGIN-----*
 
+# *****CURRENT*****
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::ODMKEYE - Image telescope Algorithm::---*')
+print('// *--------------------------------------------------------------* //')
+
+# iterate zoom out & overlay, zoom in & overlay for n frames
+
+# loaded images into the following arrays (defined above)
+
+# jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
+# [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+
+
+# find number of source images in src dir
+numSrcImg = len(processSrcList)
+# initialize SzX, SzY to dimensions of src img
+SzX = processObjList[0].shape[1]
+SzY = processObjList[0].shape[0]
+
+frameRate = 30
+#numFrames = eyeLength * frameRate
+
+# num frames per beat (quantized)
+fpb = int(np.ceil(eyeClks.framesPerBeat))
+numFrames = numSrcImg * fpb
+
+inOrOut = 0     # telescope direction: 0 = in, 1 = out
+
+# dir where processed img files are stored:
+imgTelescOutDir = rootDir+'odmkTelesc1beat/'
+os.makedirs(imgTelescOutDir, exist_ok=True)
+if inOrOut == 0:
+    imgTelescNm = 'telescopeOut'
+else:
+    imgTelescNm = 'telescopeIn'
+
+
+hop_sz = ceil(np.log(SzX/fpb))  # number of pixels to scale img each iteration
+
+#imgTelescopeNmArray = []
+#imgTelescopeArray = []
+
+imgCount = numFrames    # counter to increment output name
+n_digits = int(ceil(np.log10(imgCount))) + 2
+nextInc = 0
+for i in range(numSrcImg):
+    newDimX = SzX
+    newDimY = SzY
+    imgClone = processObjList[i]    # mod to rotate through src img
+    for t in range(fpb):
+        if newDimX > 2:
+            newDimX -= 2*hop_sz
+        if newDimY > 2:
+            newDimY -= 2*hop_sz
+        # scale image to new dimensions
+        imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
+        # region = (left, upper, right, lower)
+        # subbox = (i + 1, i + 1, newDimX, newDimY)
+        for j in range(SzY):
+            for k in range(SzX):
+                if ((j > t+hop_sz) and (j < newDimY) and (k > t+hop_sz) and (k < newDimX)):
+                    imgClone[j+(SzY-newDimY)/2, k+(SzX-newDimX)/2, :] = imgItr[j - t, k - t, :]
+        nextInc += 1
+        zr = ''
+        if inOrOut == 1:
+            for j in range(n_digits - len(str(nextInc))):
+                zr += '0'
+            strInc = zr+str(nextInc)
+        else:
+            for j in range(n_digits - len(str(imgCount - (nextInc)))):
+                zr += '0'
+            strInc = zr+str(imgCount - (nextInc))
+        imgTelescFull = imgTelescOutDir+imgTelescNm+strInc+'.jpg'
+        misc.imsave(imgTelescFull, imgClone)
+
+#print('\nCreated numpy arrays:')
+#print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
+
+print('Saved Processed images to the following location:')
+print(imgTelescOutDir)
+print('\n')
+
+print('// *--------------------------------------------------------------* //')    
+
+# *-----BYPASS END-----*
+
+# // *---------------------------------------------------------------------* //
+# // *--end: Image telescope Out--*
+# // *---------------------------------------------------------------------* //
+
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+# *-----BYPASS BEGIN-----*
+
+## *****CURRENT*****
+#
 #print('\n')
 #print('// *--------------------------------------------------------------* //')
 #print('// *---::ODMKEYE - Image telescope Algorithm::---*')
@@ -1471,7 +1592,9 @@ print('// *--------------------------------------------------------------* //')
 #print('\n')
 #
 #print('// *--------------------------------------------------------------* //')    
-#
+
+# *-----BYPASS END-----*
+
 # // *---------------------------------------------------------------------* //
 # // *--end: Image telescope Out--*
 # // *---------------------------------------------------------------------* //
