@@ -102,7 +102,7 @@ def randomIdx(n, k):
     return randIdx
 
 
-#def reverseIdx(imgArray):
+# def reverseIdx(imgArray):
 
 # -----------------------------------------------------------------------------
 # img Pre-processing func
@@ -204,7 +204,6 @@ def odmkEyeCrop(img, SzX, SzY, high):
             hdiff_ths = hdiff / 2
             # hdiff_bhs = hdiff / 2
 
-    #imgItr = 0    # ***remove***
     for j in range(SzY):
         for k in range(SzX):
             if high == 1:
@@ -212,22 +211,22 @@ def odmkEyeCrop(img, SzX, SzY, high):
                 imgCrop_g[j, k] = img_g[j, k + wdiff_lhs]
                 imgCrop_b[j, k] = img_b[j, k + wdiff_lhs]
             else:
+                # pdb.set_trace()
                 imgCrop_r[j, k] = img_r[j + hdiff_ths, k + wdiff_lhs]
                 imgCrop_g[j, k] = img_g[j + hdiff_ths, k + wdiff_lhs]
                 imgCrop_b[j, k] = img_b[j + hdiff_ths, k + wdiff_lhs]
-        #if j == SzY - 1:
-            #imgItr += 1
-            #print('imgItr = '+str(imgItr))
+        # if j == SzY - 1:
+            # print('imgItr ++')
     imgCrop = np.dstack((imgCrop_r, imgCrop_g, imgCrop_b))
     return imgCrop
 
 
 def odmkEyeDim(img, SzX, SzY, high):
     ''' Zoom and Crop image to match source dimensions '''
-    
+
     imgWidth = img.shape[1]
     imgHeight = img.shape[0]
-    
+
     #pdb.set_trace()
 
     if (imgWidth == SzX and imgHeight == SzY):
@@ -244,18 +243,14 @@ def odmkEyeDim(img, SzX, SzY, high):
 
     elif (imgWidth > SzX and imgHeight > SzY):
         # downscaling and cropping
-        wdiff = imgWidth - SzX
-        hdiff = imgHeight - SzY
-        #minDiff = min(wdiff, hdiff)
-        if wdiff <= hdiff:
-            zoomFactor = (imgWidth - wdiff) / imgWidth
+        wRatio = SzX / imgWidth
+        hRatio = SzY / imgHeight
+        if wRatio >= hRatio:
+            zoomFactor = wRatio
         else:
-            zoomFactor = (imgHeight - hdiff) / imgHeight
-        # print('zoomFactor = '+str(zoomFactor))
+            zoomFactor = hRatio
         imgScaled = odmkEyeZoom(img, zoomFactor)
-        # misc.imsave('imgSrc/exp1/myFirstKikDrumZOOM00001.jpg', imgScaled)
         imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
-        # misc.imsave('imgSrc/exp1/myFirstKikDrumZCrop00001.jpg', imgScaled)
 
     elif (imgWidth < SzX and imgHeight == SzY):
         # upscaling and cropping
@@ -273,19 +268,18 @@ def odmkEyeDim(img, SzX, SzY, high):
 
     elif (imgWidth < SzX and imgHeight < SzY):
         # upscaling and cropping (same aspect ratio -> upscaling only)
-        wdiff = mstrSzX - imgWidth
-        hdiff = mstrSzY - imgHeight
-        maxDiff = max(wdiff, hdiff)
-        if wdiff >= hdiff:
-            zoomFactor = (imgWidth + maxDiff) / imgWidth
+        wRatio = mstrSzX / imgWidth
+        hRatio = mstrSzY / imgHeight
+        if wRatio >= hRatio:
+            zoomFactor = wRatio
         else:
-            zoomFactor = (imgHeight + maxDiff) / imgHeight
+            zoomFactor = hRatio
         imgScaled = odmkEyeZoom(img, zoomFactor)
         imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
 
     elif (imgWidth > SzX and imgHeight < SzY):
         # upscaling and cropping
-        wdiff = imgWidth - SzX
+        # wdiff = imgWidth - SzX
         hdiff = SzY - imgHeight
         zoomFactor = (imgHeight + hdiff) / imgHeight
         imgScaled = odmkEyeZoom(img, zoomFactor)
@@ -294,90 +288,12 @@ def odmkEyeDim(img, SzX, SzY, high):
     elif (imgWidth < SzX and imgHeight > SzY):
         # upscaling and cropping
         wdiff = SzX - imgWidth
-        hdiff = imgHeight - SzY
+        # hdiff = imgHeight - SzY
         zoomFactor = (imgWidth + wdiff) / imgWidth
         imgScaled = odmkEyeZoom(img, zoomFactor)
         imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
 
     return imgScaled
-    
-    
-#def odmkEyeDim(img, SzX, SzY, high):
-#    ''' Zoom and Crop image to match source dimensions '''
-#    
-#    imgWidth = img.shape[1]
-#    imgHeight = img.shape[0]
-#
-#    if (imgWidth == SzX and imgHeight == SzY):
-#        # no processing
-#        imgScaled = img
-#
-#    elif (imgWidth == SzX and imgHeight > SzY):
-#        # cropping only
-#        imgScaled = odmkEyeCrop(img, SzX, SzY, high)
-#
-#    elif (imgWidth > SzX and imgHeight == SzY):
-#        # cropping only
-#        imgScaled = odmkEyeCrop(img, SzX, SzY, high)
-#
-#    elif (imgWidth > SzX and imgHeight > SzY):
-#        # downscaling and cropping
-#        wdiff = imgWidth - SzX
-#        hdiff = imgHeight - SzY
-#        minDiff = min(wdiff, hdiff)
-#        if wdiff <= hdiff:
-#            zoomFactor = (imgWidth - minDiff) / imgWidth
-#        else:
-#            zoomFactor = (imgHeight - minDiff) / imgHeight
-#        # print('zoomFactor = '+str(zoomFactor))
-#        imgScaled = odmkEyeZoom(img, zoomFactor)
-#        # misc.imsave('imgSrc/exp1/myFirstKikDrumZOOM00001.jpg', imgScaled)
-#        imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
-#        # misc.imsave('imgSrc/exp1/myFirstKikDrumZCrop00001.jpg', imgScaled)
-#
-#    elif (imgWidth < SzX and imgHeight == SzY):
-#        # upscaling and cropping
-#        wdiff = SzX - imgWidth
-#        zoomFactor = (imgWidth + wdiff) / imgWidth
-#        imgScaled = odmkEyeZoom(img, zoomFactor)
-#        imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
-#
-#    elif (imgWidth == SzX and imgHeight < SzY):
-#        # upscaling and cropping
-#        hdiff = SzY - imgHeight
-#        zoomFactor = (imgHeight + hdiff) / imgHeight
-#        imgScaled = odmkEyeZoom(img, zoomFactor)
-#        imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
-#
-#    elif (imgWidth < SzX and imgHeight < SzY):
-#        # upscaling and cropping (same aspect ratio -> upscaling only)
-#        wdiff = mstrSzX - imgWidth
-#        hdiff = mstrSzY - imgHeight
-#        maxDiff = max(wdiff, hdiff)
-#        if wdiff >= hdiff:
-#            zoomFactor = (imgWidth + maxDiff) / imgWidth
-#        else:
-#            zoomFactor = (imgHeight + maxDiff) / imgHeight
-#        imgScaled = odmkEyeZoom(img, zoomFactor)
-#        imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
-#
-#    elif (imgWidth > SzX and imgHeight < SzY):
-#        # upscaling and cropping
-#        wdiff = imgWidth - SzX
-#        hdiff = SzY - imgHeight
-#        zoomFactor = (imgHeight + hdiff) / imgHeight
-#        imgScaled = odmkEyeZoom(img, zoomFactor)
-#        imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
-#
-#    elif (imgWidth < SzX and imgHeight > SzY):
-#        # upscaling and cropping
-#        wdiff = SzX - imgWidth
-#        hdiff = imgHeight - SzY
-#        zoomFactor = (imgWidth + wdiff) / imgWidth
-#        imgScaled = odmkEyeZoom(img, zoomFactor)
-#        imgScaled = odmkEyeCrop(imgScaled, SzX, SzY, high)
-#
-#    return imgScaled    
 
 
 def odmkScaleAll(srcObjList, SzX, SzY, w=0, high=0, outDir='None', outName='None'):
@@ -733,6 +649,209 @@ def odmkImgDivXfade(imgList, numFrames, imgOutDir, imgOutNm='None'):
     return [imgDivXfadeArray, imgDivXfadeNmArray]
 
 
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - Image Telescope Sequence Algorithm::---*
+# // *--------------------------------------------------------------* //
+
+def odmkImgTelescope(imgList, framesPerBeat, imgOutDir, inOut=0, imgOutNm='None'):
+    ''' outputs a sequence of telescoping images (zoom in or zoom out)
+        The period of telescoping sequence synched to framesPerBeat
+        assumes images in imgList are normalized (scaled/cropped) numpy arrays '''
+
+    if imgOutNm != 'None':
+        imgTelescNm = imgOutNm
+    else:
+        imgTelescNm = 'imgTelescope'
+
+    # find number of source images in src dir
+    numSrcImg = len(imgList)
+    # initialize SzX, SzY to dimensions of src img
+    SzX = imgList[0].shape[1]
+    SzY = imgList[0].shape[0]
+
+    numFrames = numSrcImg * framesPerBeat                
+
+    hop_sz = ceil(np.log(SzX/framesPerBeat))  # number of pixels to scale img each iteration
+
+    #imgTelescopeNmArray = []
+    #imgTelescopeArray = []
+
+    imgCount = numFrames    # counter to increment output name
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    for i in range(numSrcImg):
+        newDimX = SzX
+        newDimY = SzY
+        imgClone = imgList[i]    # mod to rotate through src img
+        for t in range(fpb):
+            if newDimX > 2:
+                newDimX -= 2*hop_sz
+            if newDimY > 2:
+                newDimY -= 2*hop_sz
+            # scale image to new dimensions
+            imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
+            # region = (left, upper, right, lower)
+            # subbox = (i + 1, i + 1, newDimX, newDimY)
+            for j in range(SzY):
+                for k in range(SzX):
+                    #if ((j >= (t+1)*hop_sz) and (j < (newDimY+(SzY-newDimY)/2)) and (k >= (t+1)*hop_sz) and (k < (newDimX+(SzX-newDimX)/2))):
+                    if ((j >= (t+1)*hop_sz) and (j < newDimY+((t+1)*hop_sz)/2) and (k >= (t+1)*hop_sz) and (k < newDimX+((t+1)*hop_sz)/2)):
+                        #imgClone[j+(SzY-newDimY)/2, k+(SzX-newDimX)/2, :] = imgItr[j - t, k - t, :]
+                        imgClone[j, k, :] = imgItr[j - (SzY-newDimY)/2, k - (SzX-newDimX)/2, :]
+            nextInc += 1
+            zr = ''
+            if inOrOut == 1:
+                for j in range(n_digits - len(str(nextInc))):
+                    zr += '0'
+                strInc = zr+str(nextInc)
+            else:
+                for j in range(n_digits - len(str(imgCount - (nextInc)))):
+                    zr += '0'
+                strInc = zr+str(imgCount - (nextInc))
+            imgTelescFull = imgOutDir+imgTelescNm+strInc+'.jpg'
+            misc.imsave(imgTelescFull, imgClone)
+
+
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - Img Xfade Telescope Sequence Algorithm::---*
+# // *--------------------------------------------------------------* //
+
+def odmkImgXfadeTelescope(imgList, framesPerBeat, imgOutDir, inOut=0, imgOutNm='None'):
+    ''' outputs a sequence of telescoping images (zoom in or zoom out)
+        The period of telescoping sequence synched to framesPerBeat
+        assumes images in imgList are normalized (scaled/cropped) numpy arrays '''
+
+    if imgOutNm != 'None':
+        imgTelescNm = imgOutNm
+    else:
+        imgTelescNm = 'imgTelescope'
+
+    # find number of source images in src dir
+    numSrcImg = len(imgList)
+    # initialize SzX, SzY to dimensions of src img
+    SzX = imgList[0].shape[1]
+    SzY = imgList[0].shape[0]
+
+    numFrames = numSrcImg * framesPerBeat
+
+    alphaX = np.linspace(0.0, 1.0, framesPerBeat)               
+
+    hop_sz = ceil(np.log(SzX/framesPerBeat))  # number of pixels to scale img each iteration
+
+    #imgTelescopeNmArray = []
+    #imgTelescopeArray = []
+
+    imgCount = numFrames    # counter to increment output name
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    for i in range(numSrcImg):
+        imgClone1 = imgList[i]
+        imgClone2 = imgList[(i + 1) % numSrcImg]  # final img+1 -> first img
+        newDimX = SzX
+        newDimY = SzY
+        for t in range(framesPerBeat):
+            if newDimX > 2:
+                newDimX -= 2*hop_sz
+            if newDimY > 2:
+                newDimY -= 2*hop_sz
+            # scale image to new dimensions
+            imgItr1 = Image.fromarray(odmkEyeRescale(imgClone1, newDimX, newDimY))
+            imgItr2 = Image.fromarray(odmkEyeRescale(imgClone2, newDimX, newDimY))
+            alphaB = Image.blend(imgItr1, imgItr2, alphaX[t])
+            alphaX = np.array(alphaB)
+            # region = (left, upper, right, lower)
+            # subbox = (i + 1, i + 1, newDimX, newDimY)
+            for j in range(SzY):
+                for k in range(SzX):
+                    #if ((j >= (t+1)*hop_sz) and (j < (newDimY+(SzY-newDimY)/2)) and (k >= (t+1)*hop_sz) and (k < (newDimX+(SzX-newDimX)/2))):
+                    if ((j >= (t+1)*hop_sz) and (j < newDimY+((t+1)*hop_sz)/2) and (k >= (t+1)*hop_sz) and (k < newDimX+((t+1)*hop_sz)/2)):
+                        #imgClone[j+(SzY-newDimY)/2, k+(SzX-newDimX)/2, :] = imgItr[j - t, k - t, :]
+                        imgClone1[j, k, :] = alphaX[j - (SzY-newDimY)/2, k - (SzX-newDimX)/2, :]
+            nextInc += 1
+            zr = ''
+            if inOrOut == 1:
+                for j in range(n_digits - len(str(nextInc))):
+                    zr += '0'
+                strInc = zr+str(nextInc)
+            else:
+                for j in range(n_digits - len(str(imgCount - (nextInc)))):
+                    zr += '0'
+                strInc = zr+str(imgCount - (nextInc))
+            imgTelescFull = imgOutDir+imgTelescNm+strInc+'.jpg'
+            misc.imsave(imgTelescFull, imgClone1)
+            
+            
+# // *--------------------------------------------------------------* //
+# // *---::ODMKEYE - Img DivXfade Telescope Sequence Algorithm::---*
+# // *--------------------------------------------------------------* //
+
+def odmkImgDivXfadeTelescope(imgList, framesPerBeat, imgOutDir, inOut=0, imgOutNm='None'):
+    ''' outputs a sequence of telescoping images (zoom in or zoom out)
+        The period of telescoping sequence synched to framesPerBeat
+        assumes images in imgList are normalized (scaled/cropped) numpy arrays '''
+
+    if imgOutNm != 'None':
+        imgTelescNm = imgOutNm
+    else:
+        imgTelescNm = 'imgTelescope'
+
+    # find number of source images in src dir
+    numSrcImg = len(imgList)
+    # initialize SzX, SzY to dimensions of src img
+    SzX = imgList[0].shape[1]
+    SzY = imgList[0].shape[0]
+
+    numFrames = numSrcImg * framesPerBeat
+
+    alphaX = np.linspace(0.0001, 1.0, framesPerBeat)               
+
+    hop_sz = ceil(np.log(SzX/framesPerBeat))  # number of pixels to scale img each iteration
+
+    #imgTelescopeNmArray = []
+    #imgTelescopeArray = []
+
+    imgCount = numFrames    # counter to increment output name
+    n_digits = int(ceil(np.log10(imgCount))) + 2
+    nextInc = 0
+    for i in range(numSrcImg):
+        imgClone1 = imgList[i]
+        imgClone2 = imgList[(i + 1) % numSrcImg]  # final img+1 -> first img
+        newDimX = SzX
+        newDimY = SzY
+        for t in range(framesPerBeat):
+            if newDimX > 2:
+                newDimX -= 2*hop_sz
+            if newDimY > 2:
+                newDimY -= 2*hop_sz
+            # scale image to new dimensions
+            imgItr1 = odmkEyeRescale(imgClone1, newDimX, newDimY)
+            imgItr2 = odmkEyeRescale(imgClone2, newDimX, newDimY)
+            # image division blend algorithm..
+            c = imgItr1/((imgItr2.astype('float')+1)/(256*alphaX[t]))
+            # saturating function - if c[m,n] > 255, set to 255:
+            imgDIVB = c*(c < 255)+255*np.ones(np.shape(c))*(c > 255)
+            # region = (left, upper, right, lower)
+            # subbox = (i + 1, i + 1, newDimX, newDimY)
+            for j in range(SzY):
+                for k in range(SzX):
+                    #if ((j >= (t+1)*hop_sz) and (j < (newDimY+(SzY-newDimY)/2)) and (k >= (t+1)*hop_sz) and (k < (newDimX+(SzX-newDimX)/2))):
+                    if ((j >= (t+1)*hop_sz) and (j < newDimY+((t+1)*hop_sz)/2) and (k >= (t+1)*hop_sz) and (k < newDimX+((t+1)*hop_sz)/2)):
+                        #imgClone[j+(SzY-newDimY)/2, k+(SzX-newDimX)/2, :] = imgItr[j - t, k - t, :]
+                        imgClone1[j, k, :] = imgDIVB[j - (SzY-newDimY)/2, k - (SzX-newDimX)/2, :]
+            nextInc += 1
+            zr = ''
+            if inOrOut == 1:
+                for j in range(n_digits - len(str(nextInc))):
+                    zr += '0'
+                strInc = zr+str(nextInc)
+            else:
+                for j in range(n_digits - len(str(imgCount - (nextInc)))):
+                    zr += '0'
+                strInc = zr+str(imgCount - (nextInc))
+            imgTelescFull = imgOutDir+imgTelescNm+strInc+'.jpg'
+            misc.imsave(imgTelescFull, imgClone1)            
+            
+
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
 # end : function definitions
@@ -910,14 +1029,22 @@ print('// *--------------------------------------------------------------* //')
 
 # jpgSrcDir = rootDir+'process/'
 # jpgSrcDir = rootDir+'kei777/'
-# jpgSrcDir = rootDir+'kroztest/'
-jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
+# jpgSrcDir = rootDir+'failTest/'
+# [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
 
-[processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+#print('\nCreated python lists:')
+#print('<<processObjList>> (img data objects)')
+#print('<<processSrcList>> (img names)\n')
+
+
+# use if scaled img already exist
+jpgSrcDir = rootDir+'expScaled/'    # pre-scaled img list
+# jpgSrcDir = rootDir+'gorgulanScaled/'    # pre-scaled img list
+[processScaledArray, processScaledNmArray] = importAllJpg(jpgSrcDir)
 
 print('\nCreated python lists:')
-print('<<processObjList>> (img data objects)')
-print('<<processSrcList>> (img names)\n')
+print('<<processScaledArray>>   (img data objects)')
+print('<<processScaledNmArray>> (img names)\n')
 
 print('// *--------------------------------------------------------------* //')
 
@@ -935,14 +1062,14 @@ print('// *--------------------------------------------------------------* //')
 #print('// *--------------------------------------------------------------* //')
 #
 ## define output directory for scaled img
-#processScaleDir = rootDir+'keiroz777/'
+#processScaleDir = rootDir+'gorgulanScaled/'
 #os.makedirs(processScaleDir, exist_ok=True)
 #
 ##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
 ##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0, outName='gorgulan')
 ##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 1, outDir=gorgulanDir)
 ##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=1, outDir=gorgulanDir, outName='gorgulan')
-#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=0, outDir=processScaleDir, outName='keiroz777')
+#[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, w=1, high=0, outDir=processScaleDir, outName='gorgulan')
 #
 #print('\nCreated python lists:')
 #print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
@@ -1414,15 +1541,281 @@ print('// *--------------------------------------------------------------* //')
 # // *********************************************************************** //
 # // *********************************************************************** //
 
+## *-----BYPASS BEGIN-----*
+#
+## *****CHECKIT*****
+#
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMKEYE - Image telescope Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## iterate zoom out & overlay, zoom in & overlay for n frames
+#
+## loaded images into the following arrays (defined above)
+#
+## jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
+## [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+#
+## num frames per beat (quantized)
+#fpb = int(np.ceil(eyeClks.framesPerBeat))
+#
+#inOrOut = 0     # telescope direction: 0 = in, 1 = out
+#
+## dir where processed img files are stored:
+#imgTelescOutDir = rootDir+'odmkTelescInbeat/'
+#os.makedirs(imgTelescOutDir, exist_ok=True)
+#if inOrOut == 0:
+#    imgTelescNm = 'telescopeIn'
+#else:
+#    imgTelescNm = 'telescopeOut'
+#
+#
+#odmkImgTelescope(processScaledArray, fpb, inOut=inOrOut, imgTelescOutDir, imgOutNm=imgTelescNm)
+#
+##print('\nCreated numpy arrays:')
+##print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
+#
+#print('Saved Processed images to the following location:')
+#print(imgTelescOutDir)
+#print('\n')
+#
+#print('// *--------------------------------------------------------------* //')    
+#
+## *-----BYPASS END-----*
+
+
+
+#def odmkImgTelescope(imgList, framesPerBeat, inOut=0, imgOutDir, imgOutNm='None'):
+#    ''' outputs a sequence of telescoping images (zoom in or zoom out)
+#        The period of telescoping sequence synched to framesPerBeat
+#        assumes images in imgList are normalized (scaled/cropped) numpy arrays '''
+#
+#    if imgOutNm != 'None':
+#        imgTelescNm = imgOutNm
+#    else:
+#        imgTelescNm = 'imgTelescope'
+#        
+#    # find number of source images in src dir
+#    numSrcImg = len(imgList)
+#    # initialize SzX, SzY to dimensions of src img
+#    SzX = imgList[0].shape[1]
+#    SzY = imgList[0].shape[0]
+#
+#    numFrames = numSrcImg * framesPerBeat                
+#
+#    hop_sz = ceil(np.log(SzX/framesPerBeat))  # number of pixels to scale img each iteration
+#    
+#    #imgTelescopeNmArray = []
+#    #imgTelescopeArray = []
+#    
+#    imgCount = numFrames    # counter to increment output name
+#    n_digits = int(ceil(np.log10(imgCount))) + 2
+#    nextInc = 0
+#    for i in range(numSrcImg):
+#        newDimX = SzX
+#        newDimY = SzY
+#        imgClone = imgList[i]    # mod to rotate through src img
+#        for t in range(fpb):
+#            if newDimX > 2:
+#                newDimX -= 2*hop_sz
+#            if newDimY > 2:
+#                newDimY -= 2*hop_sz
+#            # scale image to new dimensions
+#            imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
+#            # region = (left, upper, right, lower)
+#            # subbox = (i + 1, i + 1, newDimX, newDimY)
+#            for j in range(SzY):
+#                for k in range(SzX):
+#                    #if ((j >= (t+1)*hop_sz) and (j < (newDimY+(SzY-newDimY)/2)) and (k >= (t+1)*hop_sz) and (k < (newDimX+(SzX-newDimX)/2))):
+#                    if ((j >= (t+1)*hop_sz) and (j < newDimY+((t+1)*hop_sz)/2) and (k >= (t+1)*hop_sz) and (k < newDimX+((t+1)*hop_sz)/2)):
+#                        #imgClone[j+(SzY-newDimY)/2, k+(SzX-newDimX)/2, :] = imgItr[j - t, k - t, :]
+#                        imgClone[j, k, :] = imgItr[j - (SzY-newDimY)/2, k - (SzX-newDimX)/2, :]
+#            nextInc += 1
+#            zr = ''
+#            if inOrOut == 1:
+#                for j in range(n_digits - len(str(nextInc))):
+#                    zr += '0'
+#                strInc = zr+str(nextInc)
+#            else:
+#                for j in range(n_digits - len(str(imgCount - (nextInc)))):
+#                    zr += '0'
+#                strInc = zr+str(imgCount - (nextInc))
+#            imgTelescFull = imgOutDir+imgTelescNm+strInc+'.jpg'
+#            misc.imsave(imgTelescFull, imgClone)
+
+
+# // *---------------------------------------------------------------------* //
+# // *--end: Image telescope Out--*
+# // *---------------------------------------------------------------------* //
+
+
+
+
+## // *********************************************************************** //
+## // *********************************************************************** //
+## // *********************************************************************** //
+#
+## *-----BYPASS BEGIN-----*
+#
+## *****OLD -> functionalized (delete after check)*****
+#
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMKEYE - Image telescope Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## iterate zoom out & overlay, zoom in & overlay for n frames
+#
+## loaded images into the following arrays (defined above)
+#
+## jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
+## [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+#
+#
+## find number of source images in src dir
+#numSrcImg = len(processScaledNmArray)
+## initialize SzX, SzY to dimensions of src img
+#SzX = processScaledArray[0].shape[1]
+#SzY = processScaledArray[0].shape[0]
+#
+## defined as global
+## framesPerSec = 30
+#
+## num frames per beat (quantized)
+#fpb = int(np.ceil(eyeClks.framesPerBeat))
+#numFrames = numSrcImg * fpb
+#
+#inOrOut = 0     # telescope direction: 0 = in, 1 = out
+#
+## dir where processed img files are stored:
+#imgTelescOutDir = rootDir+'odmkTelescInbeat/'
+#os.makedirs(imgTelescOutDir, exist_ok=True)
+#if inOrOut == 0:
+#    imgTelescNm = 'telescopeIn'
+#else:
+#    imgTelescNm = 'telescopeOut'
+#
+#
+#hop_sz = ceil(np.log(SzX/fpb))  # number of pixels to scale img each iteration
+#
+##imgTelescopeNmArray = []
+##imgTelescopeArray = []
+#
+#imgCount = numFrames    # counter to increment output name
+#n_digits = int(ceil(np.log10(imgCount))) + 2
+#nextInc = 0
+#for i in range(numSrcImg):
+#    newDimX = SzX
+#    newDimY = SzY
+#    imgClone = processScaledArray[i]    # mod to rotate through src img
+#    for t in range(fpb):
+#        if newDimX > 2:
+#            newDimX -= 2*hop_sz
+#        if newDimY > 2:
+#            newDimY -= 2*hop_sz
+#        # scale image to new dimensions
+#        imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
+#        # region = (left, upper, right, lower)
+#        # subbox = (i + 1, i + 1, newDimX, newDimY)
+#        for j in range(SzY):
+#            for k in range(SzX):
+#                #if ((j >= (t+1)*hop_sz) and (j < (newDimY+(SzY-newDimY)/2)) and (k >= (t+1)*hop_sz) and (k < (newDimX+(SzX-newDimX)/2))):
+#                if ((j >= (t+1)*hop_sz) and (j < newDimY+((t+1)*hop_sz)/2) and (k >= (t+1)*hop_sz) and (k < newDimX+((t+1)*hop_sz)/2)):
+#                    #imgClone[j+(SzY-newDimY)/2, k+(SzX-newDimX)/2, :] = imgItr[j - t, k - t, :]
+#                    imgClone[j, k, :] = imgItr[j - (SzY-newDimY)/2, k - (SzX-newDimX)/2, :]
+#        nextInc += 1
+#        zr = ''
+#        if inOrOut == 1:
+#            for j in range(n_digits - len(str(nextInc))):
+#                zr += '0'
+#            strInc = zr+str(nextInc)
+#        else:
+#            for j in range(n_digits - len(str(imgCount - (nextInc)))):
+#                zr += '0'
+#            strInc = zr+str(imgCount - (nextInc))
+#        imgTelescFull = imgTelescOutDir+imgTelescNm+strInc+'.jpg'
+#        misc.imsave(imgTelescFull, imgClone)
+#
+##print('\nCreated numpy arrays:')
+##print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
+#
+#print('Saved Processed images to the following location:')
+#print(imgTelescOutDir)
+#print('\n')
+#
+#print('// *--------------------------------------------------------------* //')    
+#
+## *-----BYPASS END-----*
+#
+## // *---------------------------------------------------------------------* //
+## // *--end: Image telescope Out--*
+## // *---------------------------------------------------------------------* //
+
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
 # *-----BYPASS BEGIN-----*
 
-# *****CURRENT*****
+# *****check v results*****
+
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMKEYE - Image Xfade telescope Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## function: odmkImgDivXfadeTelescope
+## iterate zoom out & overlay, zoom in & overlay for n frames
+#
+## loaded images into the following arrays (defined above)
+#
+## jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
+## [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+#
+## num frames per beat (quantized)
+#fpb = 2*int(np.ceil(eyeClks.framesPerBeat))
+#
+#inOrOut = 1     # telescope direction: 0 = in, 1 = out
+#
+## dir where processed img files are stored:
+#imgXfadeTelOutDir = rootDir+'odmkXfadeTelOut/'
+#os.makedirs(imgXfadeTelOutDir, exist_ok=True)
+#if inOrOut == 0:
+#    imgXfadeTelNm = 'xfadeTelIn'
+#else:
+#    imgXfadeTelNm = 'xXfadeTelOut'
+#
+#
+#odmkImgXfadeTelescope(processScaledArray, fpb, imgXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgXfadeTelNm)
+#
+##print('\nCreated numpy arrays:')
+##print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
+#
+#print('Saved Processed images to the following location:')
+#print(imgXfadeTelOutDir)
+#print('\n')
+#
+#print('// *--------------------------------------------------------------* //')    
+
+# *-----BYPASS END-----*
+
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+# *-----BYPASS BEGIN-----*
+
+# *****check v results*****
 
 print('\n')
 print('// *--------------------------------------------------------------* //')
-print('// *---::ODMKEYE - Image telescope Algorithm::---*')
+print('// *---::ODMKEYE - Image Div Xfade telescope Algorithm::---*')
 print('// *--------------------------------------------------------------* //')
 
+# function: odmkImgDivXfadeTelescope
 # iterate zoom out & overlay, zoom in & overlay for n frames
 
 # loaded images into the following arrays (defined above)
@@ -1430,174 +1823,32 @@ print('// *--------------------------------------------------------------* //')
 # jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
 # [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
 
-
-# find number of source images in src dir
-numSrcImg = len(processSrcList)
-# initialize SzX, SzY to dimensions of src img
-SzX = processObjList[0].shape[1]
-SzY = processObjList[0].shape[0]
-
-frameRate = 30
-#numFrames = eyeLength * frameRate
-
 # num frames per beat (quantized)
-fpb = int(np.ceil(eyeClks.framesPerBeat))
-numFrames = numSrcImg * fpb
+fpb = 2*int(np.ceil(eyeClks.framesPerBeat))
 
-inOrOut = 0     # telescope direction: 0 = in, 1 = out
+inOrOut = 1     # telescope direction: 0 = in, 1 = out
 
 # dir where processed img files are stored:
-imgTelescOutDir = rootDir+'odmkTelesc1beat/'
-os.makedirs(imgTelescOutDir, exist_ok=True)
+imgDivXfadeTelOutDir = rootDir+'odmkDivXfadeTelOut/'
+os.makedirs(imgDivXfadeTelOutDir, exist_ok=True)
 if inOrOut == 0:
-    imgTelescNm = 'telescopeOut'
+    imgDivXfadeTelNm = 'divXfadeTelIn'
 else:
-    imgTelescNm = 'telescopeIn'
+    imgDivXfadeTelNm = 'divXfadeTelOut'
 
 
-hop_sz = ceil(np.log(SzX/fpb))  # number of pixels to scale img each iteration
-
-#imgTelescopeNmArray = []
-#imgTelescopeArray = []
-
-imgCount = numFrames    # counter to increment output name
-n_digits = int(ceil(np.log10(imgCount))) + 2
-nextInc = 0
-for i in range(numSrcImg):
-    newDimX = SzX
-    newDimY = SzY
-    imgClone = processObjList[i]    # mod to rotate through src img
-    for t in range(fpb):
-        if newDimX > 2:
-            newDimX -= 2*hop_sz
-        if newDimY > 2:
-            newDimY -= 2*hop_sz
-        # scale image to new dimensions
-        imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
-        # region = (left, upper, right, lower)
-        # subbox = (i + 1, i + 1, newDimX, newDimY)
-        for j in range(SzY):
-            for k in range(SzX):
-                if ((j > t+hop_sz) and (j < newDimY) and (k > t+hop_sz) and (k < newDimX)):
-                    imgClone[j+(SzY-newDimY)/2, k+(SzX-newDimX)/2, :] = imgItr[j - t, k - t, :]
-        nextInc += 1
-        zr = ''
-        if inOrOut == 1:
-            for j in range(n_digits - len(str(nextInc))):
-                zr += '0'
-            strInc = zr+str(nextInc)
-        else:
-            for j in range(n_digits - len(str(imgCount - (nextInc)))):
-                zr += '0'
-            strInc = zr+str(imgCount - (nextInc))
-        imgTelescFull = imgTelescOutDir+imgTelescNm+strInc+'.jpg'
-        misc.imsave(imgTelescFull, imgClone)
+odmkImgDivXfadeTelescope(processScaledArray, fpb, imgDivXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgDivXfadeTelNm)
 
 #print('\nCreated numpy arrays:')
 #print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
 
 print('Saved Processed images to the following location:')
-print(imgTelescOutDir)
+print(imgDivXfadeTelOutDir)
 print('\n')
 
 print('// *--------------------------------------------------------------* //')    
 
 # *-----BYPASS END-----*
-
-# // *---------------------------------------------------------------------* //
-# // *--end: Image telescope Out--*
-# // *---------------------------------------------------------------------* //
-
-
-# // *********************************************************************** //
-# // *********************************************************************** //
-# // *********************************************************************** //
-
-# *-----BYPASS BEGIN-----*
-
-## *****CURRENT*****
-#
-#print('\n')
-#print('// *--------------------------------------------------------------* //')
-#print('// *---::ODMKEYE - Image telescope Algorithm::---*')
-#print('// *--------------------------------------------------------------* //')
-#
-## iterate zoom out & overlay, zoom in & overlay
-#
-## defined above!
-#SzX = mstrSzX
-#SzY = mstrSzY
-#
-## num_img = 56
-#num_img = 46
-#inOrOut = 0     # telescope direction: 0 = in, 1 = out
-#hop_sz = 5      # number of pixels to scale img each iteration
-#
-## dir where processed img files are stored:
-#imgTelescdir = rootDir+'exp1/'
-#if inOrOut == 0:
-#    imgTelescNm = 'telescopeOut'
-#else:
-#    imgTelescNm = 'telescopeIn'
-#
-## **temp? - selects a specific image from array, should be more generic***
-#gzIdx = 2
-#imgClone = gzScaledArray[gzIdx]
-#imgCloneNm = gzScaledNmArray[gzIdx]
-#
-#
-#imgTelescopeNmArray = []
-#imgTelescopeArray = []
-#
-#newDimX = SzX
-#newDimY = SzY
-#for i in range(num_img):
-#    if newDimX > 2:
-#        newDimX -= hop_sz
-#    if newDimY > 2:
-#        newDimY -= hop_sz
-#    # scale image to new dimensions
-#    imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
-#    # region = (left, upper, right, lower)
-#    # subbox = (i + 1, i + 1, newDimX, newDimY)
-#
-#    for j in range(SzY):
-#        for k in range(SzX):
-#            if ((j > i) and (j < newDimY) and (k > i) and (k < newDimX)):
-#                imgClone[j, k, :] = imgItr[j - i, k - i, :]
-#    # Find num digits required to represent max index
-#    n_digits = int(ceil(np.log10(num_img))) + 2
-#    zr = ''
-#    if inOrOut == 1:
-#        for j in range(n_digits - len(str(i + 1))):
-#            zr += '0'
-#        strInc = zr+str(i + 1)
-#    else:
-#        for j in range(n_digits - len(str(num_img - (i + 1)))):
-#            zr += '0'
-#        strInc = zr+str(num_img - (i + 1))
-#    imgTelescFull = imgTelescdir+imgTelescNm+strInc+'.jpg'
-#    misc.imsave(imgTelescFull, imgClone)
-#    imgTelescopeNmArray.append(imgTelescNm+strInc+'.jpg')
-#    imgTelescopeArray.append(imgClone)
-#
-#print('\nProcessed source img: \n'+imgCloneNm)
-#print('Renamed files: "'+imgTelescNm+'00X.jpg"')
-#
-#print('\nCreated numpy arrays:')
-#print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
-#
-#print('Saved Scaled images to the following location:')
-#print(imgTelescdir)
-#print('\n')
-#
-#print('// *--------------------------------------------------------------* //')    
-
-# *-----BYPASS END-----*
-
-# // *---------------------------------------------------------------------* //
-# // *--end: Image telescope Out--*
-# // *---------------------------------------------------------------------* //
 
 # // *********************************************************************** //
 # // *********************************************************************** //
