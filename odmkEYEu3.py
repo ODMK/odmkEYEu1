@@ -1029,7 +1029,7 @@ print('// *--------------------------------------------------------------* //')
 
 # jpgSrcDir = rootDir+'process/'
 # jpgSrcDir = rootDir+'kei777/'
-# jpgSrcDir = rootDir+'failTest/'
+# jpgSrcDir = rootDir+'kkshkSrc/'
 # [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
 
 #print('\nCreated python lists:')
@@ -1038,8 +1038,8 @@ print('// *--------------------------------------------------------------* //')
 
 
 # use if scaled img already exist
-jpgSrcDir = rootDir+'expScaled/'    # pre-scaled img list
 # jpgSrcDir = rootDir+'gorgulanScaled/'    # pre-scaled img list
+jpgSrcDir = rootDir+'kkshkScaled/'    # pre-scaled img list
 [processScaledArray, processScaledNmArray] = importAllJpg(jpgSrcDir)
 
 print('\nCreated python lists:')
@@ -1062,7 +1062,7 @@ print('// *--------------------------------------------------------------* //')
 #print('// *--------------------------------------------------------------* //')
 #
 ## define output directory for scaled img
-#processScaleDir = rootDir+'gorgulanScaled/'
+#processScaleDir = rootDir+'kkshkScaled/'
 #os.makedirs(processScaleDir, exist_ok=True)
 #
 ##[processScaledArray, processScaledNmArray] = odmkScaleAll(processObjList, mstrSzX, mstrSzY, 0)
@@ -1181,7 +1181,7 @@ print('// *--------------------------------------------------------------* //')
 #eyeDFrames = eyeCks.clkDownFrames()
 #
 ## output dir where processed img files are stored:
-#imgRndBpmdir = rootDir+'exp7/'
+#imgRndBpmdir = rootDir+'imgRndBpmMasaki777/'
 ## If Dir does not exist, makedir:
 #os.makedirs(imgRndBpmdir, exist_ok=True)
 #
@@ -1371,36 +1371,38 @@ print('// *--------------------------------------------------------------* //')
 
 # *****CHECKIT*****
 
-#print('\n')
-#print('// *--------------------------------------------------------------* //')
-#print('// *---::ODMK Image CrossFade Sequencer::---*
-#print('// *---Crossfade a sequence of images, period = framesPerBeat---*')
-#print('// *--------------------------------------------------------------* //')
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::ODMK Image CrossFade Sequencer::---*')
+print('// *---Crossfade a sequence of images, period = framesPerBeat---*')
+print('// *--------------------------------------------------------------* //')
 
-#srcXfadeDir = rootDir+'eyeSrcExp23/'
-#outXfadeDir = rootDir+'eyeXfadeOut/'
-#os.makedirs(outXfadeDir, exist_ok=True)
-#
-#[imgSrcObj, imgSrcObjNm] = importAllJpg(srcXfadeDir)
-#
-#framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
-#
-#[xfadeOutA, xfadeOutNmA] = odmkImgXfade(imgSrcObj, framesPerBeat, outXfadeDir, imgOutNm='gorgulanXfade')
-#
+# srcXfadeDir = rootDir+'eyeSrcExp23/'
+outXfadeDir = rootDir+'eyeXfadeMasaki777/'
+os.makedirs(outXfadeDir, exist_ok=True)
+
+
+framesPerBeat = 2*int(np.ceil(eyeClks.framesPerBeat))
+
+[xfadeOutA, xfadeOutNmA] = odmkImgXfade(processScaledArray, framesPerBeat, outXfadeDir, imgOutNm='eyeXfadeMasaki')
+
 #[xfadeRepeatA, xfadeRepeatNmA] = repeatDir(outXfadeDir, 3, w=1, repeatDir=rootDir+'eyeXfadeRepeat/', repeatName='eyeXfadeR')
-#
-#print('\nodmkImgDivXfade function output => Created python lists:')
-#print('<<<xfadeOutA>>>   (ndimage objects)')
-#print('<<<xfadeOutNmA>>> (img names)')
-#
-#print('\nrepeatDir function output => Created python lists:')
-#print('<<<xfadeRepeatA>>>   (ndimage objects)')
-#print('<<<xfadeRepeatNmA>>> (img names)')
-#
-#print('\noutput processed img to the following directory:')
-#print(rootDir+'eyeXfadeRepeat')
-#
-#print('// *--------------------------------------------------------------* //')
+
+print('\nodmkImgDivXfade function output => Created python lists:')
+print('<<<xfadeOutA>>>   (ndimage objects)')
+print('<<<xfadeOutNmA>>> (img names)')
+
+print('\noutput processed img to the following directory:')
+print(rootDir+'outXfadeDir')
+
+# print('\nrepeatDir function output => Created python lists:')
+# print('<<<xfadeRepeatA>>>   (ndimage objects)')
+# print('<<<xfadeRepeatNmA>>> (img names)')
+
+# print('\noutput processed img to the following directory:')
+# print(rootDir+'eyeXfadeRepeat')
+
+print('// *--------------------------------------------------------------* //')
 
 # *-----BYPASS END-----*
 
@@ -1810,43 +1812,43 @@ print('// *--------------------------------------------------------------* //')
 
 # *****check v results*****
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::ODMKEYE - Image Div Xfade telescope Algorithm::---*')
-print('// *--------------------------------------------------------------* //')
-
-# function: odmkImgDivXfadeTelescope
-# iterate zoom out & overlay, zoom in & overlay for n frames
-
-# loaded images into the following arrays (defined above)
-
-# jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
-# [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
-
-# num frames per beat (quantized)
-fpb = 2*int(np.ceil(eyeClks.framesPerBeat))
-
-inOrOut = 1     # telescope direction: 0 = in, 1 = out
-
-# dir where processed img files are stored:
-imgDivXfadeTelOutDir = rootDir+'odmkDivXfadeTelOut/'
-os.makedirs(imgDivXfadeTelOutDir, exist_ok=True)
-if inOrOut == 0:
-    imgDivXfadeTelNm = 'divXfadeTelIn'
-else:
-    imgDivXfadeTelNm = 'divXfadeTelOut'
-
-
-odmkImgDivXfadeTelescope(processScaledArray, fpb, imgDivXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgDivXfadeTelNm)
-
-#print('\nCreated numpy arrays:')
-#print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
-
-print('Saved Processed images to the following location:')
-print(imgDivXfadeTelOutDir)
-print('\n')
-
-print('// *--------------------------------------------------------------* //')    
+#print('\n')
+#print('// *--------------------------------------------------------------* //')
+#print('// *---::ODMKEYE - Image Div Xfade telescope Algorithm::---*')
+#print('// *--------------------------------------------------------------* //')
+#
+## function: odmkImgDivXfadeTelescope
+## iterate zoom out & overlay, zoom in & overlay for n frames
+#
+## loaded images into the following arrays (defined above)
+#
+## jpgSrcDir = rootDir+'gorgulanScale/'    # pre-scaled img list
+## [processObjList, processSrcList] = importAllJpg(jpgSrcDir)
+#
+## num frames per beat (quantized)
+#fpb = 2*int(np.ceil(eyeClks.framesPerBeat))
+#
+#inOrOut = 1     # telescope direction: 0 = in, 1 = out
+#
+## dir where processed img files are stored:
+#imgDivXfadeTelOutDir = rootDir+'odmkDivXfadeTelOut/'
+#os.makedirs(imgDivXfadeTelOutDir, exist_ok=True)
+#if inOrOut == 0:
+#    imgDivXfadeTelNm = 'divXfadeTelIn'
+#else:
+#    imgDivXfadeTelNm = 'divXfadeTelOut'
+#
+#
+#odmkImgDivXfadeTelescope(processScaledArray, fpb, imgDivXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgDivXfadeTelNm)
+#
+##print('\nCreated numpy arrays:')
+##print('<<imgTelescopeArray>> (img data objects) and <<imgTelescopeNmArray>> (img names)\n')
+#
+#print('Saved Processed images to the following location:')
+#print(imgDivXfadeTelOutDir)
+#print('\n')
+#
+#print('// *--------------------------------------------------------------* //')    
 
 # *-----BYPASS END-----*
 
