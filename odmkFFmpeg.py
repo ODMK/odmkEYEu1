@@ -16,13 +16,19 @@
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 # *****************************************************************************
 
-import os
+import os, sys
 from math import ceil
 import numpy as np
 
 # from subprocess import check_output, check_call
 from subprocess import check_call
 
+rootDir = 'C:/odmkDev/odmkCode/odmkPython/'
+audioScrDir = 'C:/odmkDev/odmkCode/odmkPython/audio/wavsrc/'
+audioOutDir = 'C:/odmkDev/odmkCode/odmkPython/audio/wavout/'
+
+#sys.path.insert(0, 'C:/odmkDev/odmkCode/odmkPython/util')
+sys.path.insert(0, rootDir+'util')
 from odmkClear import *
 
 # temp python debugger - use >>>pdb.set_trace() to set break
@@ -60,14 +66,29 @@ print('// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ //')
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+# eyeDir = 'C:/Users/djoto-odmk/odmk-sci/odmk_code/odmkPython/eye/odmkSrc/'
+
+# ***** SET DIR *****
+# eyeSrcDirNm = 'totwnEyes_ImgXfade/'
+# eyeSrcDirNm = 'eyeEchoGorgulan1vDir/'
+eyeSrcDirNm = 'odmkGSrc1CEnhanceTscDir/'
+
+# *** don't change ***
+eyeDir = rootDir+'eye/eyeSrc/'
+eyeSrcDir = eyeDir+eyeSrcDirNm
+
+#earSrcNm = 'totwII04_ghola.wav'
+earSrcNm = 'glamourgoat014xx8_93bpm.wav'
+earSrcDir = audioScrDir
+earSrc = earSrcDir+earSrcNm
+
+#pdb.set_trace()
+
+
 print('\n')
 print('// *--------------------------------------------------------------* //')
 print('// *---::Search for .jpg images in eyeSrcDir directory::---*')
 print('// *--------------------------------------------------------------* //')
-
-eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/eyeXfadeRotRepeat/'
-# eyeSrcDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/imgConcatExp/'
-# eyeOutDir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/ffmpegOut/'
 
 # generate list all files in a directory
 imgSrcList = []
@@ -95,7 +116,7 @@ print('// *---::Set earSrcDir directory::---*')
 print('// *--------------------------------------------------------------* //')
 
 
-earSrc = 'C:/usr/eschei/odmkPython/odmk/audio/wavSrc/tonzuraTBE01.wav'
+# earSrc = 'C:/usr/eschei/odmkPython/odmk/audio/wavSrc/tonzuraTBE01.wav'
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -118,24 +139,24 @@ n_digits = int(ceil(np.log10(imgCount))) + 2
 
 fmt_str = eye_name+'%'+str(n_digits)+'d.jpg'
 
-movie_cmd = ["ffmpeg",
-             '-an',  # no sound!
-             '-r',  '%d' % frame_rate,
-             '-i', os.path.join(eyeSrcDir, fmt_str),
-             '-y' if overwrite else '-n',
-             # '-vcodec', codec,
-             '-b:v', bitrate,
-             movie_name]
-             
 #movie_cmd = ["ffmpeg",
+#             '-an',  # no sound!
 #             '-r',  '%d' % frame_rate,
 #             '-i', os.path.join(eyeSrcDir, fmt_str),
-#             '-i', earSrc,
-#             '-shortest',
 #             '-y' if overwrite else '-n',
 #             # '-vcodec', codec,
 #             '-b:v', bitrate,
 #             movie_name]
+             
+movie_cmd = ["ffmpeg",
+             '-r',  '%d' % frame_rate,
+             '-i', os.path.join(eyeSrcDir, fmt_str),
+             '-i', earSrc,
+             '-shortest',
+             '-y' if overwrite else '-n',
+             # '-vcodec', codec,
+             '-b:v', bitrate,
+             movie_name]
 
 check_call(movie_cmd)
 
