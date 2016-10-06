@@ -71,14 +71,15 @@ print('// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ //')
 # ***** SET DIR *****
 # eyeSrcDirNm = 'totwnEyes_ImgXfade/'
 # eyeSrcDirNm = 'eyeEchoGorgulan1vDir/'
-eyeSrcDirNm = 'odmkGSrc1CEnhanceTscDir/'
+eyeSrcDirNm = 'bananaslothTelescopeDir/'
 
 # *** don't change ***
 eyeDir = rootDir+'eye/eyeSrc/'
 eyeSrcDir = eyeDir+eyeSrcDirNm
 
 #earSrcNm = 'totwII04_ghola.wav'
-earSrcNm = 'glamourgoat014xx8_93bpm.wav'
+#earSrcNm = 'glamourgoat014xx8_93bpm.wav'
+earSrcNm = 'dendrilatic1_120bpm.wav'
 earSrcDir = audioScrDir
 earSrc = earSrcDir+earSrcNm
 
