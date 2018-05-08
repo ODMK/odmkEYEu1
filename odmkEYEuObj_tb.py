@@ -22,11 +22,13 @@
 
 import os, sys
 from math import atan2, floor, ceil
+import glob, shutil
 import random
 import numpy as np
 import scipy as sp
 from scipy import ndimage
 from scipy import misc
+
 # from PIL import Image
 # from PIL import ImageOps
 # from PIL import ImageEnhance
@@ -42,11 +44,12 @@ from odmkClear import *
 #sys.path.insert(1, 'C:/odmkDev/odmkCode/odmkPython/DSP')
 sys.path.insert(1, rootDir+'eye')
 import odmkEYEuObj as eye
+import odmkVIDEOu as odmkv
 
 #sys.path.insert(1, 'C:/odmkDev/odmkCode/odmkPython/DSP')
 sys.path.insert(2, rootDir+'DSP')
 import odmkClocks as clks
-import odmkSigGen1 as sigGen
+import odmkWavGen1 as wavGen
 
 #sys.path.insert(1, 'C:/odmkDev/odmkCode/odmkPython/DSP')
 sys.path.insert(3, rootDir+'audio')
@@ -58,6 +61,7 @@ import pdb
 
 
 # // *---------------------------------------------------------------------* //
+# plt.close('all')
 clear_all()
 
 # // *---------------------------------------------------------------------* //
@@ -69,9 +73,9 @@ clear_all()
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
-# -----------------------------------------------------------------------------
-# utility func
-# -----------------------------------------------------------------------------
+# /////////////////////////////////////////////////////////////////////////////
+# *---utility func--*
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 
 def cyclicZn(n):
@@ -114,28 +118,55 @@ print('// *--------------------------------------------------------------* //')
 print('// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ //')
 
 
-xLength = 15
-fs = 48000.0        # audio sample rate:
-framesPerSec = 60.0 # video frames per second:
-# ub313 bpm = 178 , 267
-bpm = 120    #glamourGoat14 = 93
-timeSig = 4         # time signature: 4 = 4/4; 3 = 3/4
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Initializing EYE Object Parameters::---*')
+print('// *--------------------------------------------------------------* //')
+
+# /////////////////////////////////////////////////////////////////////////////
+# *---Begin INITIALIZE: Set top-level parameters--*
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 eyeDir = rootDir+'eye/eyeSrc/'
 
+# 10 21 21 16 16 16
 
-#SzX = 360
-#SzY = 240
+# 180/26,  90/1, 90/1, 90/26, 180/222, 45/24
 
-# mstrSzX = 360
-# mstrSzY = 240
+xLength = 113
+#xLength = 5
 
-#mstrSzX = 1280
-#mstrSzY = 960
+fs = 48000.0        # audio sample rate:
+framesPerSec = 30 # video frames per second:
+numFrames = int(ceil(xLength * framesPerSec))
+# ub313 bpm = 178 , 267  
+# 39 - 78 - 156
+#bpm = 186            # 93 - 186 - 372
+bpm = 128            # 64.5 - 129 - 258
+timeSig = 4         # time signature: 4 = 4/4; 3 = 3/4
 
-# ?D Standard video aspect ratio
+# set format of source img { fjpg, fbmp }
+imgFormat = 'fjpg'
+
+
+# HD Standard video aspect ratio
+#SzX = 1920
+#SzX = 1080
+#SzY = 1080
+
+#SzX = 1560
+#SzY = 1560
+
+#SzX = 1080
+#SzY = 1080
+
 SzX = 1280
 SzY = 720
+
+# 1920x1080 quarter frame
+#SzX = 960
+#SzY = 540
 
 # SD Standard video aspect ratio
 #mstrSzX = 640
@@ -151,65 +182,46 @@ SzY = 720
 #mstrSzX = 1436
 #mstrSzY = 888
 
-print('\n')
-print('// *--------------------------------------------------------------* //')
-print('// *---::Instantiate objects::---*')
-print('// *--------------------------------------------------------------* //')        
+
+# <<< Select Top-Level processing >>>
+# *---------------------------------------------------------------------------*
+# 1  => Main Algorithm Pixel-Banging
+# 2  => Pre-Processing
+# 3  => Post-Processing
+topSwitch = 1
 
 
-cntrlLoadX = 1
-cntrlScaleAll = 0
-cntrlEYE = 24
-postProcess = 0
-
-eyeTb = eye.odmkEYEu(xLength, bpm, timeSig, SzX, SzY, framesPerSec=30.0, fs=48000, cntrlEYE=cntrlEYE, rootDir='None')
-print('\nAn odmkEYEu object has been instanced with:')
-print('xLength = '+str(xLength)+'; bpm = '+str(bpm)+' ; timeSig = '+str(timeSig)+' ; framesPerSec = '+str(framesPerSec)+' ; fs = '+str(fs))
-
-
-eyeClks = clks.odmkClocks(xLength, fs, bpm, framesPerSec)
-print('\nAn odmkEYEu object has been instanced with:')
-print('xLength = '+str(xLength)+'; fs = '+str(fs)+'; bpm = '+str(bpm)+' ; framesPerSec = '+str(framesPerSec))
+print('\nEye Directory = '+eyeDir+'\n')
+print('Sequence Length (seconds) = '+str(xLength)+'\n')
+print('Audio Sample Rate (cycles/sec) = '+str(fs)+'\n')
+print('Video Frames per Second = '+str(framesPerSec)+'\n')
+print('Sequence BPM = '+str(bpm)+'\n')
+print('Sequence Time Signature = '+str(timeSig)+'\n')
+print('Video Frame Dimensions [X, Y] = '+str(SzX)+' x '+str(SzY)+'\n')
 
 
-framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
 
 
-if cntrlLoadX == 1:
-    # jpgSrcDir: set the directory path used for processing .jpg files
-    #jpgSrcDir = eyeDir+'totwnEyesSrc/'
-    #jpgSrcDir = eyeDir+'odmkGorgulan56Scale1280x960/'    # pre-scaled or scaled img list
-    #jpgSrcDir = eyeDir+'odmkGorgulan56Scale360x240/'
-    #pgSrcDir = eyeDir+'bananasloth/'
-    #jpgSrcDir = eyeDir+'bananaslothScale360x240/'
-    jpgSrcDir = eyeDir+'bananaslothScale1280x720/'
-    #jpgSrcDir = eyeDir+'odmkGorgulanSrc/'
-    
-# cntrlScaleAll = 1    
-# cntrlScaleAll - Image scale processing
-# <0> Bypass  => No scaling
-# <1> Scale
+# *---------------------------------------------------------------------------*
 
-if cntrlScaleAll == 1:
-    high = 1    # "head crop" cntrl - <0> => center crop, <1> crop from img top
-    # *** Define Dir & File name for Scaling
-    # scaleFileName: file name used for output processed .jpg (appended with 000X)
-    scaleFileName = 'bananasloth'
-    # scaleOutDirName: set the directory path used for output processed .jpg
-    scaleOutDirName = 'bananaslothScale1280x720/'
-    
-    
-if cntrlEYE != 0:
-    # eyeOutFileName: file name used for output processed .jpg (appended with 000X)
-    #eyeOutFileName = 'eyeEchoGorgulan1v'
-    eyeOutFileName = 'bananaslothTelescope'
-    # eyeOutDirName: set the directory path used for output processed .jpg
-    #eyeOutDirName = 'eyeEchoGorgulan1vDir/'
-    eyeOutDirName = 'bananaslothTelescopeDir/'
+        
 
-# <<<selects pixel banging algorithm>>>
+# /////////////////////////////////////////////////////////////////////////////
+# *---Begin MAIN: Select top-level switches--*
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+if topSwitch == 1:
+
+# <<< img array sequencing function Select >>>
 # *---------------------------------------------------------------------------*
 # 0  => Bypass
+# 1  => 1 directory of frames
+
+# <<< Pixel Banging Algorithm Select >>>
+# *---------------------------------------------------------------------------*
+# 0  => Bypass
+# 100  => EYE Linear Select Algorithm            ::odmkImgLinSel::
+# 101  => EYE Rotate Linear Select Algorithm     ::odmkImgRotLinSel::
 # 1  => EYE Random Select Algorithm              ::odmkImgRndSel::
 # 2  => EYE Random BPM Algorithm                 ::odmkImgRndSel::
 # 3  => EYE Random Select Telescope Algorithm    ::**nofunc**::
@@ -226,8 +238,185 @@ if cntrlEYE != 0:
 # 20 => EYE Color Enhance BPM Algorithm          ::odmkImgColorEnhance::
 # 21 => EYE Color Enhance Telescope Algorithm    ::odmkImgCEnTelescope::
 # 22 => EYE Pixel Random Replace Algorithm       ::odmkPxlRndReplace::
-# 23 => EYE Dual Bipolar Telescope Algorithm     ::odmkDualBipolarTelesc::
+# 222 => EYE Pixel Random Rotate Algorithm       ::odmkPxlRndRotate::
+# 23 => EYE LFO Modulated Parascope Algorithm    ::odmkLfoParascope::
 # 24 => EYE Bananasloth Recursive Algorithm      ::odmkBSlothRecurs::
+# 26 => EYE Bananasloth Glitch 1                 ::odmkBSlothGlitch1::
+# 27 => EYE Bananasloth Glitch 3                 ::odmkBSlothGlitch3::
+# 28 => EYE LFO Horizontal Trails Algorithm      ::odmkLfoHtrails::
+
+# 202  => EYE RanSel LFO Algorithm                 ::odmkImgRndSel::
+
+# 623 => EYE FxSlothCultLife Glitch 1            ::odmkFxSlothCult1::
+
+# 626 => EYE FxSlothCultLife Glitch 1            ::odmkFxSlothCult1::
+
+# 626 => EYE Video VideoGoreXXZ01                ::odmkVideoGoreXXZ01::
+
+# *--------------------------...
+
+
+    cntrlLoadX = 1
+    #cntrlScaleAll = 0
+    srcSeqProcess = 0       # 0 = single directory, 1 = multiple directries  FIXIT!!
+    cntrlEYE = 12
+    preProcess = 0
+    postProcess = 0         # 0 = bypass, 1 = ???, 2 = ???, 3 = concatAllDir(...)
+    
+  
+elif topSwitch == 2:  
+    
+    # <<< Pre Processing Function Select >>>
+    # *---------------------------------------------------------------------------*
+    # 0  => Bypass
+    # 1  => ?                                           ::?::
+    # 2  => scale all img in dir                        ::odmkScaleAll::
+    # 3  => convert .jpg img to .bmp                    ::convertJPGtoBMP::
+    # 4  => ?                                           ::?::
+    
+    
+    # Pre Processing
+    cntrlLoadX = 0
+    #cntrlScaleAll = 0
+    srcSeqProcess = 0
+    cntrlEYE = 0
+    preProcess = 2
+    postProcess = 0
+  
+
+elif topSwitch ==3:  
+    
+    # <<< Post Processing Function Select >>>
+    # *---------------------------------------------------------------------------*
+    # *---------------------------------------------------------------------------*
+    # 0  => Bypass
+    # 1  => ?                                           ::?::
+    # 2  => ?                                           ::?::
+    # 3  => Concatenate all img in directory list       ::concatAllDir::
+    # 4  => 4-quadrant img mirror                       ::mirrorHV4AllImg::
+    # 5  => 4-quadrant temporal dly img mirror          ::mirrorTemporalHV4AllImg::
+    # 6  => interlace 2 directories
+    
+    # post processing
+    cntrlLoadX = 0
+    #cntrlScaleAll = 0
+    srcSeqProcess = 0
+    cntrlEYE = 0
+    preProcess = 0
+    postProcess = 6
+
+
+else:
+    
+    print('All processing Bypassed!')
+
+
+if cntrlLoadX == 1:
+    # jpgSrcDir: set the directory path used for processing .jpg files
+    # jpgSrcDir = eyeDir+'odmk17_1280x720/'
+    jpgSrcDir = eyeDir+'totwnMCkeisolomon1280x720/'
+    #jpgSrcDir = eyeDir+'bloodWizardMeefeep1080/'
+
+
+#if cntrlScaleAll == 1:
+#    high = 0    # "head crop" cntrl - <0> => center crop, <1> crop from img top
+#    # *** Define Dir & File name for Scaling
+#
+#    scaleFileName = 'odmk17_1280x720'
+#
+#    scaleOutDirName = 'odmk17_1280x720_convert/'    
+    
+    
+if srcSeqProcess == 1:
+    srcDir = eyeDir+'bloodWizardMeefeepFX/'
+    
+    
+    
+if srcSeqProcess == 2:
+    srcDir1 = eyeDir+'bloodWizardMSol_111/'
+    srcDir2 = eyeDir+'bloodWizardMSol_111/'
+    
+    srcDirList = [srcDir1, srcDir2]
+
+   
+if srcSeqProcess == 5:
+    srcDir1 = eyeDir+'greenInfernoSrc/'
+    srcDir2 = eyeDir+'bollywoodGnk1/'
+    srcDir3 = eyeDir+'osamaBinTrap/'
+    srcDir4 = eyeDir+'demiLevato/'
+    srcDir5 = eyeDir+'pulgasari/'
+    srcDir6 = eyeDir+'spiceIndicatorGnk/'
+    srcDir7 = eyeDir+'streetTrash/' 
+
+    srcDirList = [srcDir1, srcDir2, srcDir3, srcDir4, srcDir5, srcDir6, srcDir7]
+
+#    srcDir1 = eyeDir+'keisolomon1280x720/'
+#    srcDir2 = eyeDir+'keisolomon1280x720/'
+#    srcDirList = [srcDir1, srcDir2]
+   
+   
+   
+if cntrlEYE != 0:  
+    
+    # eyeOutFileName: file name used for output processed .jpg (appended with 000X)
+    #eyeOutFileName = 'eyeEchoGorgulan1v'
+    #eyeOutFileName = 'missiledeathcultTelescope'
+    #eyeOutFileName = 'bananaslothParascope'
+    #eyeOutFileName = 'heavyMetalFX_1560x_'
+    eyeOutFileName = 'totwnSurvival'    
+    
+    # eyeOutDirName: set the directory path used for output processed .jpg
+    #eyeOutDirName = 'eyeEchoGorgulan1vDir/'
+    #eyeOutDirName = 'missiledeathcultTelescopeDir/'
+    #eyeOutDirName = 'bananaslothParascopeDir/'
+    #eyeOutDirName = 'heavyMetalFX_1560x1560_X3/'
+    eyeOutDirName = 'totwnSurvival_136/'    
+
+
+
+# *---------------------------------------------------------------------------*
+# *---------------------------------------------------------------------------*
+
+
+# <<<selects image pre-processing function>>>
+# *---------------------------------------------------------------------------*
+# 0  => Bypass
+# 1  => Image Random Select Algorithm              ::odmkImgRndSel::
+# postProcess = 0
+
+if preProcess == 1:
+    # repeatReverseAllImg:
+    n = 2                         # number of repetitions (including 1st copy)
+    srcDir = 'odmkExternal_Y3_129bpm\\'       # source image directory 
+    eyeOutDirName = 'baliMaskYoukaiDirRpt/'    # output image directory 
+    eyeOutFileName = 'baliMaskYoukai'         # output image name 
+
+
+
+elif preProcess == 2:
+    high = 1    # "head crop" cntrl - <0> => center crop, <1> crop from img top
+    # *** Define Dir & File name for Scaling
+    
+    scaleSrcDir = 'odmkSeijinNextSrc\\'       # source image directory
+    
+    scaleSzX = 1560
+    scaleSzY = 1560
+
+    scaleFileName = 'odmkSeijinNext_x'
+    scaleOutDirName = 'odmkSeijinNextSrc1560x1560\\'
+
+
+elif preProcess == 3:
+    # ***convert all images from jpg to bmp
+    
+    jpgSrcDir = 'bloodWizardMeefeep1080z\\'       # source image directory
+
+    bmpOutFileName = 'bloodWizardMeefeep1080z_bmp'
+    bmpOutDirName = 'bloodWizardMeefeep1080z_bmp\\'
+
+# *---------------------------------------------------------------------------*
+# *---------------------------------------------------------------------------*
+
 
 # <<<selects image post-processing function>>>
 # *---------------------------------------------------------------------------*
@@ -241,7 +430,8 @@ if postProcess == 1:
     srcDir = 'baliMaskYoukaiDir/'       # source image directory 
     eyeOutDirName = 'baliMaskYoukaiDirRpt/'    # output image directory 
     eyeOutFileName = 'baliMaskYoukai'         # output image name 
-    
+
+
 elif postProcess == 2:
     # repeatReverseAllImg - operates on directory
     n = 2                         # number of repetitions (including 1st copy)
@@ -250,14 +440,114 @@ elif postProcess == 2:
     eyeOutFileName = 'baliMaskYoukai'         # output image name
 
 
+elif postProcess == 3:
+    # concatAllDir
+    loc1 = eyeDir+'bloodWizardMFXx\\'
+    loc2 = eyeDir+'bloodWizardMFX\\'
+#    loc3 = eyeDir+'fxMoshBeast_X3_MIR1\\'
+#    loc4 = eyeDir+'fxMoshBeast_X4_MIR1\\'
+#    loc5 = eyeDir+'astroCratorJuice_Y5/'
+#    loc6 = eyeDir+'astroCratorJuice_Y6/'
+#    loc7 = eyeDir+'bSlothCultMirrorHV4_Z7_135bpm/'
+#    loc8 = eyeDir+'bSlothCultMirrorHV4_Z8_135bpm/'
+#    loc9 = eyeDir+'bSlothCultMirrorHV4_Z9_135bpm/'
+#    loc10 = eyeDir+'bSlothCultMirrorHV4_Z10_135bpm/'    
+    
+    #loc6 = eyeDir+'odmkFxionDir_Z6/'
+#    loc6 = eyeDir+'bananaslothParascopeDir_6/'
+#    loc7 = eyeDir+'bananaslothParascopeDir_7/'
+#    loc8 = eyeDir+'bananaslothParascopeDir_8/'    
+    
+    #concatDirList = [loc1, loc2, loc3, loc4, loc5, loc6, loc7, loc8, loc9, loc10]
+    #concatDirList = [loc1, loc2]
+    concatDirList = [loc1, loc2]
+   
+    concatReName = 'bloodWizardMeefeepFX'
+    concatOutDir = 'bloodWizardMeefeepFX\\'
+
+
+elif postProcess == 4:
+
+    ctrlQ = 'LR'    # defines the root quadrant to mirror from: {'UL', 'LL', 'UR', 'LR'}
+    mirrorHV4SrcDir = 'heavyMetalFX_1560x1560_X3/'
+    mirrorHV4ReName = 'heavyMetalFX_X3_MIR'
+    mirrorHV4OutDir = 'heavyMetalFX_X3_MIR/'
+
+
+elif postProcess == 5:
+
+    ctrlQ = 'LR'    # defines the root quadrant to mirror from: {'UL', 'LL', 'UR', 'LR'}
+    ctrlDly = 42
+    mirrorTemporalHV4SrcDir = 'fxMoshBeast_II/'
+    mirrorTemporalHV4ReName = 'fxMoshBeast_X3_MIR1'
+    mirrorTemporalHV4OutDir = 'fxMoshBeast_X3_MIR1/'
+    
+    
+elif postProcess == 6:
+    imgInterlaceSrcDir1 = 'totwnMissileCult/'
+    imgInterlaceSrcDir2 = 'keisolomon1280x720/'
+    
+    imgInterlaceOutDir = 'totwnMCkeisolomon1280x720/'
+    
+    imgInterlaceReName = 'totwnMCkeisolomon'
+    
+
+elif postProcess == 7:
+    imgXfadeSrcDir1 = 'vogueGnkDncX01/'
+    imgXfadeSrcDir2 = 'gnkdButterfly/'
+    
+    imgXfadeOutDir = 'gnkdVogueMetaB/'
+    
+    imgXfadeReName = 'gnkdVogueMetaB'
+    
+    
+elif postProcess == 8:
+    imgScanSrcDir1 = 'moshOlly2017_src/'
+    imgScanSrcDir2 = 'vogueGnkDncX01/'
+    imgScanSrcDir3 = 'gnkdButterfly/'
+    imgScanSrcDir3 = 'odmkExternal_Y3_129bpm/'
+    
+    
+    imgScanOutDir = 'odmkScanDir_test/'
+    
+    imgScanReName = 'odmkScanDir_test'    
+    
+
+    
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+print('\n')
+print('// *--------------------------------------------------------------* //')
+print('// *---::Instantiate objects::---*')
+print('// *--------------------------------------------------------------* //') 
+
+
+eyeTb = eye.odmkEYEu(xLength, bpm, timeSig, SzX, SzY, imgFormat, framesPerSec=framesPerSec, fs=fs, cntrlEYE=cntrlEYE, rootDir='None')
+print('\nAn odmkEYEu object has been instanced with:')
+print('xLength = '+str(xLength)+'; bpm = '+str(bpm)+' ; timeSig = '+str(timeSig)+' ; framesPerSec = '+str(framesPerSec)+' ; fs = '+str(fs))
+
+
+odmkvTb = odmkv.odmkVIDEOu(xLength, bpm, timeSig, SzX, SzY, imgFormat, framesPerSec=framesPerSec, fs=fs, cntrlEYE=cntrlEYE, rootDir='None')
+print('\nAn odmkVIDEOu object has been instanced with:')
+print('xLength = '+str(xLength)+'; bpm = '+str(bpm)+' ; timeSig = '+str(timeSig)+' ; framesPerSec = '+str(framesPerSec)+' ; fs = '+str(fs))
+
+eyeClks = clks.odmkClocks(xLength, fs, bpm, framesPerSec)
+print('\nAn odmkEYEu object has been instanced with:')
+print('xLength = '+str(xLength)+'; fs = '+str(fs)+'; bpm = '+str(bpm)+' ; framesPerSec = '+str(framesPerSec))
+
+
+framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
+
 
 # // *********************************************************************** //
 # // *********************************************************************** //
 # // *********************************************************************** //
 
 
-# Bypass <0> ; choose raw image dir <1> ; or pre-scaled images <2>
-#cntrlLoadX = 2    #*** defined above
+
+# <<< :: Begin Function Calls :: >>>
 
 
 if cntrlLoadX == 1:    # process raw .jpg folder
@@ -283,6 +573,87 @@ print('// *--------------------------------------------------------------* //')
 # // *********************************************************************** //
 # // *********************************************************************** //
 
+
+if srcSeqProcess == 1:
+
+    imgSeqArray = sorted(glob.glob(srcDir+'*'))
+
+
+
+if srcSeqProcess == 2:
+    
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKVIDEO - Image source sequencer - 1 Dir::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # generate control signal
+    secondsPerBeat = eyeClks.spb
+
+    fsLfo = 500.0
+    tbLFOGen = wavGen.odmkWavGen1(xLength, fsLfo)
+
+
+    shape = 1
+    freqCtrl = framesPerBeat / (framesPerSec/2)
+    phaseCtrl = 0
+    
+    # TEMP for 6 ( +/-3 ) directories -> need to adapt to function
+    #xCtrl = tbLFOGen.odmkWTOsc1(numFrames, shape, freqCtrl, phaseCtrl, quant=3)+3
+    xCtrl = tbLFOGen.odmkWTOsc1(numFrames, shape, freqCtrl, phaseCtrl, quant=1)
+
+    #pdb.set_trace()
+
+    imgSeqArray = eyeTb.imgScanDir(srcDirList, numFrames, xCtrl)
+
+    print('\nCreated python lists:')
+    print('<<imgSrcArray>> (image data object list)')
+    print('<<imgSrcNmArray>> (image data object names)\n')
+
+
+print('// *--------------------------------------------------------------* //')
+
+
+if srcSeqProcess == 5:
+    
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - Image source sequencer - imgScanDir::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # generate control signal
+    secondsPerBeat = eyeClks.spb
+
+    fsLfo = 500.0
+    tbLFOGen = wavGen.odmkWavGen1(xLength, fsLfo)
+
+
+    shape = 1
+    freqCtrl = framesPerBeat / (framesPerSec/2)
+    phaseCtrl = 0
+    
+    xCtrl = tbLFOGen.odmkWTOsc1(numFrames, shape, freqCtrl, phaseCtrl, quant=3)+3
+    #xCtrl = tbLFOGen.odmkWTOsc1(numFrames, shape, freqCtrl, phaseCtrl, quant=1)
+
+    #pdb.set_trace()
+
+    imgSeqArray = eyeTb.imgScanDir(srcDirList, numFrames, xCtrl)
+
+    print('\nCreated python lists:')
+    print('<<imgSrcArray>> (image data object list)')
+    print('<<imgSrcNmArray>> (image data object names)\n')
+
+
+print('// *--------------------------------------------------------------* //')
+
+
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
 # Normalizes (Scales/Crops) all images in specified directory
 # Images are normalized to master X,Y dimensions using comination of
 # resizing and cropping in order to preserve as much of the original image
@@ -290,33 +661,33 @@ print('// *--------------------------------------------------------------* //')
 
 # cntrlScaleAll = 0    # defined above
 
-if cntrlScaleAll == 1:
-
-    print('\n')
-    print('// *--------------------------------------------------------------* //')
-    print('// *---::Scale all imgages in img obj array::---*')
-    print('// *--------------------------------------------------------------* //')
-
-    # define output directory for scaled img
-    # Dir path must end with backslash /
-    processScaleDir = eyeDir+scaleOutDirName
-    os.makedirs(processScaleDir, exist_ok=True)
-    
-    # individual file root name
-    outNameRoot = scaleFileName    
-    
-
-    [processScaledArray, processScaledNmArray] = eyeTb.odmkScaleAll(imgSrcArray, SzX, SzY, w=1, high=0, outDir=processScaleDir, outName=outNameRoot)
-
-    print('\nCreated python lists:')
-    print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
-
-    print('Saved Scaled images to the following location:')
-    print(processScaleDir)
-    print('\n')
-
-else:    # Bypass
-    pass
+#if cntrlScaleAll == 1:
+#
+#    print('\n')
+#    print('// *--------------------------------------------------------------* //')
+#    print('// *---::Scale all imgages in img obj array::---*')
+#    print('// *--------------------------------------------------------------* //')
+#
+#    # define output directory for scaled img
+#    # Dir path must end with backslash /
+#    processScaleDir = eyeDir+scaleOutDirName
+#    os.makedirs(processScaleDir, exist_ok=True)
+#    
+#    # individual file root name
+#    outNameRoot = scaleFileName    
+#    
+#
+#    [processScaledArray, processScaledNmArray] = eyeTb.odmkScaleAll(imgSrcArray, SzX, SzY, w=1, high=0, outDir=processScaleDir, outName=outNameRoot)
+#
+#    print('\nCreated python lists:')
+#    print('<<processScaledArray>> (img data objects) and <<processScaledNmArray>> (img names)\n')
+#
+#    print('Saved Scaled images to the following location:')
+#    print(processScaleDir)
+#    print('\n')
+#
+#else:    # Bypass
+#    pass
 
 # // *********************************************************************** //
 
@@ -325,6 +696,7 @@ else:    # Bypass
 # end : Loading & Formatting img and sound files
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -338,7 +710,109 @@ else:    # Bypass
 # // *********************************************************************** //
 # // *********************************************************************** //
 
-# *****CHECKIT*****
+
+if cntrlEYE == 100:
+
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - Image Linear Select Algorithm::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # for n frames:
+    # randomly select an image from the source dir, hold for h frames
+
+    # eyeOutFileName = 'myOutputFileName'    # defined above
+    imgLinSelNm = eyeOutFileName
+    # output dir where processed img files are stored:
+    # eyeOutDirName = 'myOutputDirName'    # defined above
+    imgLinSeldir = eyeDir+eyeOutDirName
+    os.makedirs(imgLinSeldir, exist_ok=True)  # If Dir does not exist, makedir
+
+    eyeTb.odmkImgLinSel(imgSrcArray, numFrames, imgLinSeldir, imgOutNm=imgLinSelNm)
+
+    print('\nodmkImgRndSel function output => Created python lists:')
+    print('<<<imgRndSelOutA>>>   (ndimage objects)')
+    print('<<<imgRndSelNmA>>> (img names)')
+
+    print('\noutput processed img to the following directory:')
+    print(imgLinSeldir)
+
+    print('// *--------------------------------------------------------------* //')
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+
+if cntrlEYE == 101:
+
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - Image Linear Solarize Algorithm::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # for n frames:
+    # randomly select an image from the source dir, hold for h frames
+
+    # eyeOutFileName = 'myOutputFileName'    # defined above
+    imgLinSolNm = eyeOutFileName
+    # output dir where processed img files are stored:
+    # eyeOutDirName = 'myOutputDirName'    # defined above
+    imgLinSoldir = eyeDir+eyeOutDirName
+    os.makedirs(imgLinSoldir, exist_ok=True)  # If Dir does not exist, makedir
+    
+    xfadeFrames = int(np.ceil(eyeClks.framesPerBeat))
+
+    eyeTb.odmkImgLinSol(imgSeqArray, numFrames, xfadeFrames, imgLinSoldir, imgOutNm=imgLinSolNm)
+
+    print('\nodmkImgRndSel function output => Created python lists:')
+    print('<<<imgRndSelOutA>>>   (ndimage objects)')
+    print('<<<imgRndSelNmA>>> (img names)')
+
+    print('\noutput processed img to the following directory:')
+    print(imgLinSoldir)
+
+    print('// *--------------------------------------------------------------* //')
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+
+
+if cntrlEYE == 102:
+
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - Image Rotate Linear Select Algorithm::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # for n frames:
+    # randomly select an image from the source dir, hold for h frames
+
+    # eyeOutFileName = 'myOutputFileName'    # defined above
+    imgLinSelNm = eyeOutFileName
+    # output dir where processed img files are stored:
+    # eyeOutDirName = 'myOutputDirName'    # defined above
+    imgLinSeldir = eyeDir+eyeOutDirName
+    os.makedirs(imgLinSeldir, exist_ok=True)  # If Dir does not exist, makedir
+
+    xfadeFrames = int(np.ceil(eyeClks.framesPerBeat))
+
+    eyeTb.odmkImgRotLinSel(imgSeqArray, numFrames, xfadeFrames, imgLinSeldir, imgOutNm=imgLinSelNm)
+
+    print('\nodmkImgRndSel function output => Created python lists:')
+    print('<<<imgRndSelOutA>>>   (ndimage objects)')
+    print('<<<imgRndSelNmA>>> (img names)')
+
+    print('\noutput processed img to the following directory:')
+    print(imgLinSeldir)
+
+    print('// *--------------------------------------------------------------* //')
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
 
 if cntrlEYE == 1:
 
@@ -357,11 +831,7 @@ if cntrlEYE == 1:
     imgRndSeldir = eyeDir+eyeOutDirName
     os.makedirs(imgRndSeldir, exist_ok=True)  # If Dir does not exist, makedir
 
-    numFrames = xLength * framesPerSec
-
-    #[imgRndSelOutA, imgRndSelNmA] = odmkImgRndSel(processScaledArray, numFrames, imgRndSeldir, imgOutNm='keiroz777')
-    #[imgRndSelOutA, imgRndSelNmA] = odmkImgRndSel(processScaledArray, numFrames, imgRndSeldir, imgOutNm=imgRndSelNm)
-    [imgRndSelOutA, imgRndSelNmA] = eye.odmkImgRndSel(imgSrcArray, numFrames, imgRndSeldir, imgOutNm=imgRndSelNm)
+    eyeTb.odmkImgRndSel(imgSrcArray, numFrames, imgRndSeldir, imgOutNm=imgRndSelNm)
 
     print('\nodmkImgRndSel function output => Created python lists:')
     print('<<<imgRndSelOutA>>>   (ndimage objects)')
@@ -399,13 +869,42 @@ elif cntrlEYE == 2:
     # generate the downFrames sequence:
     eyeDFrames = eyeClks.clkDownFrames()
 
-    # final video length in seconds
-    numFrames = xLength * framesPerSec
 
-    [imgRndBpmOutA, imgRndBpmNmA] =  eye.odmkImgRndBpm(imgSrcArray, numFrames, eyeDFrames, imgRndBpmdir, imgOutNm=imgRndBpmNm)
+    eyeTb.odmkImgRndBpm(imgSrcArray, numFrames, eyeDFrames, imgRndBpmdir, imgOutNm=imgRndBpmNm)
 
     print('// *--------------------------------------------------------------* //')
 
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+
+elif cntrlEYE == 202:
+
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - Image Random Select LFO Algorithm::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # for n frames:
+    # randomly select an image from the source dir, hold for n frames
+
+    # eyeOutFileName = 'myOutputFileName'    # defined above
+    imgRndBpmNm = eyeOutFileName
+    # output dir where processed img files are stored:
+    # eyeOutDirName = 'myOutputDirName'    # defined above
+    imgRndBpmdir = eyeDir+eyeOutDirName
+    # If Dir does not exist, makedir:
+    os.makedirs(imgRndBpmdir, exist_ok=True)
+
+    # generate the downFrames sequence:
+    eyeDFrames = eyeClks.clkDownFrames()
+
+
+    eyeTb.odmkImgRndLfo(imgSrcArray, ctrlLfo, eyeDFrames, imgRndBpmdir, imgOutNm=imgRndBpmNm)
+
+    print('// *--------------------------------------------------------------* //')
 
 # // *********************************************************************** //
 # // *********************************************************************** //
@@ -440,8 +939,8 @@ elif cntrlEYE == 3:
     # eyeLength = numFrames / frameRate
 
     # defined above!
-    SzX = mstrSzX
-    SzY = mstrSzY
+    #SzX = SzX
+    #SzY = SzY
 
     inOrOut = 0     # telescope direction: 0 = in, 1 = out
     hop_sz = 4
@@ -462,12 +961,21 @@ elif cntrlEYE == 3:
         imgClone = imgSrcArray[rIdxArray[i]]
         for t in range(tlPeriod):
             # select random image telescope in for select period
-            if newDimX > 2:
-                newDimX -= hop_sz
-            if newDimY > 2:
-                newDimY -= hop_sz
+            
+            newDimX -= hop_sz
+            if newDimX < 2:
+                newDimX = 2
+            newDimY -= hop_sz   
+            if newDimY < 2:
+                newDimY = 2
+                
+#            if newDimX > 2:
+#                newDimX -= hop_sz
+#            if newDimY > 2:
+#                newDimY -= hop_sz
+            
             # scale image to new dimensions
-            imgItr = odmkEyeRescale(imgClone, newDimX, newDimY)
+            imgItr = eyeTb.odmkEyeRescale(imgClone, newDimX, newDimY)
             # region = (left, upper, right, lower)
             # subbox = (i + 1, i + 1, newDimX, newDimY)
             for j in range(SzY):
@@ -529,40 +1037,74 @@ elif cntrlEYE == 4:
 # // *--Image Rotate & alternate sequence--*
 # // *---------------------------------------------------------------------* //
 
-# *****FUNCTIONALIZEIT*****
 
 elif cntrlEYE == 5:
 
-    # dir where processed img files are stored:
-    gzdir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp1/'
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE odmkImgRotateAlt::---*')
+    print('// *--------------------------------------------------------------* //')
 
-    eye_name = 'odmkRotFlash1'
 
-    # num_gz = 192
-    num_gz = 256
-    zn = cyclicZn(num_gz)
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    imgRotateAltNm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    imgRotateAltDir = eyeDir+eyeOutDirName
+    os.makedirs(imgRotateAltDir, exist_ok=True)
 
-    gz1NmArray = []
-    gz1Array = []
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
 
-    nextInc = 0
-    for i in range(num_gz):
-        zr = ''
-        ang = (atan2(zn[i].imag, zn[i].real))*180/np.pi
-        if ((i % 4) == 1 or (i % 4) == 2):
-            rotate_gz1 = ndimage.rotate(gz1, ang, reshape=False)
-        else:
-            rotate_gz1 = ndimage.rotate(gzRESIZEx02, ang, reshape=False)
-        nextInc += 1
-        # Find num digits required to represent max index
-        n_digits = int(ceil(np.log10(num_gz))) + 2
-        for j in range(n_digits - len(str(nextInc))):
-            zr += '0'
-        strInc = zr+str(nextInc)
-        gz1Nm = gzdir+eye_name+strInc+'.jpg'
-        misc.imsave(gz1Nm, rotate_gz1)
-        gz1NmArray.append(gz1Nm)
-        gz1Array.append(rotate_gz1)
+    sLength = xLength
+    
+    #pdb.set_trace()
+
+    imgSrcArray = []
+    imgSrcArray.extend(sorted(glob.glob(imgSeqArray+'*')))
+
+    eyeTb.odmkImgRotateAlt(imgSrcArray, sLength, framesPerSec, xfadeFrames, imgRotateAltDir, imgOutNm=imgRotateAltNm)
+
+    print('\nProcessed images output to the following directory:')
+    print(imgRotateAltDir)
+
+
+# *****FUNCTIONALIZEIT*****
+
+#elif cntrlEYE == 5:
+#
+#    # dir where processed img files are stored:
+#    gzdir = 'C:/usr/eschei/odmkPython/odmk/eye/imgSrc/exp1/'
+#
+#    eye_name = 'odmkRotFlash1'
+#
+#    # num_gz = 192
+#    num_gz = 256
+#    zn = cyclicZn(num_gz)
+#
+#    gz1NmArray = []
+#    gz1Array = []
+#
+#    nextInc = 0
+#    for i in range(num_gz):
+#        zr = ''
+#        ang = (atan2(zn[i].imag, zn[i].real))*180/np.pi
+#        if ((i % 4) == 1 or (i % 4) == 2):
+#            rotate_gz1 = ndimage.rotate(gz1, ang, reshape=False)
+#        else:
+#            rotate_gz1 = ndimage.rotate(gzRESIZEx02, ang, reshape=False)
+#        nextInc += 1
+#        # Find num digits required to represent max index
+#        n_digits = int(ceil(np.log10(num_gz))) + 2
+#        for j in range(n_digits - len(str(nextInc))):
+#            zr += '0'
+#        strInc = zr+str(nextInc)
+#        gz1Nm = gzdir+eye_name+strInc+'.jpg'
+#        misc.imsave(gz1Nm, rotate_gz1)
+#        gz1NmArray.append(gz1Nm)
+#        gz1Array.append(rotate_gz1)
 
 
 # // *********************************************************************** //
@@ -584,10 +1126,11 @@ if cntrlEYE == 6:
     outXfadeDir = eyeDir+eyeOutDirName
     os.makedirs(outXfadeDir, exist_ok=True)
 
-    xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 6)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 6)) #2 images for 2 frames
+    xfadeFrames = int(np.ceil(eyeClks.framesPerBeat))
     sLength = xLength
     
-    [xfadeOutA, xfadeOutNmA] = eye.odmkImgXfade(imgSrcArray, sLength, framesPerSec, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm)
+    eyeTb.odmkImgXfade(imgSrcArray, sLength, framesPerSec, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm)
 
     print('\nodmkImgDivXfade function output => Created python lists:')
     print('<<<xfadeOutA>>>   (ndimage objects)')
@@ -629,7 +1172,7 @@ if cntrlEYE == 666:
 
     xfadeFrames = 2*int(np.ceil(eyeClks.framesPerBeat))
 
-    [xfadeOutA, xfadeOutNmA] = eye.odmkImgXfadeAll(imgSrcArray, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm)
+    eyeTb.odmkImgXfadeAll(imgSrcArray, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm)
 
     print('\nodmkImgDivXfade function output => Created python lists:')
     print('<<<xfadeOutA>>>   (ndimage objects)')
@@ -667,10 +1210,12 @@ if cntrlEYE == 67:
     #eyeOutDirName = 'myOutputDirName'    # defined above
     outSolXfadeDir = eyeDir+eyeOutDirName
     os.makedirs(outSolXfadeDir, exist_ok=True)
+    
+    sLength = xLength
 
-    framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
+    #framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
 
-    [xSolOutA, xSolOutNmA] = eye.odmkImgSolXfade(imgSrcArray, framesPerBeat, outSolXfadeDir, imgOutNm=outSolXfadeNm)
+    eyeTb.odmkImgSolXfade(imgSrcArray, sLength, framesPerSec, framesPerBeat, outSolXfadeDir, imgOutNm=outSolXfadeNm)
 
     #[xfadeRepeatA, xfadeRepeatNmA] = repeatDir(outXfadeDir, 3, w=1, repeatDir=eyeDir+'eyeXfadeRepeat/', repeatName='eyeXfadeR')
 
@@ -758,9 +1303,9 @@ if cntrlEYE == 8:
     framesPerBeat = int(np.ceil(eyeClks.framesPerBeat))
     #xFrames = framesPerBeat
 
-    xFrames = int(ceil(xLength * framesPerSec) / 2)   # 1 fade whole length
+    xFrames = int(ceil(xLength * framesPerSec) / 4)   # 1 fade whole length
 
-    [xfadeRotOutA, xfadeRotOutNmA] = eye.odmkImgXfadeRot(imgSrcArray, xLength, framesPerSec, xFrames, outXfadeRotDir, imgOutNm=outXfadeRotNm, rotDirection=rotD)
+    eyeTb.odmkImgXfadeRot(imgSrcArray, xLength, framesPerSec, xFrames, outXfadeRotDir, imgOutNm=outXfadeRotNm, rotDirection=rotD)
 
     #[xfadeRotRepeatA, xfadeRotRepeatNmA] = repeatDir(outXfadeRotDir, 3, w=1, repeatDir=eyeDir+'eyeXfadeRotRepeat/', repeatName='eyeXfadeRotR')
 
@@ -812,7 +1357,7 @@ if cntrlEYE == 9:
     inOrOut = 0     # telescope direction: 0 = in, 1 = out
         
 
-    eye.odmkImgTelescope(imgSrcArray, xLength, fps, fpb, imgTelescOutDir, imgOutNm=imgTelescNm, inOut=inOrOut)
+    eyeTb.odmkImgTelescope(imgSrcArray, xLength, fps, fpb, imgTelescOutDir, imgOutNm=imgTelescNm, inOut=inOrOut)
 
     print('Saved Processed images to the following location:')
     print(imgTelescOutDir)
@@ -916,7 +1461,7 @@ if cntrlEYE == 10:
     else:
         imgXfadeTelNm = eyeOutFileName+'_telOut'
 
-    eye.odmkImgXfadeTelescope(processScaledArray, fpb, imgXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgXfadeTelNm)
+    eyeTb.odmkImgXfadeTelescope(processScaledArray, fpb, imgXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgXfadeTelNm)
 
     print('Saved Processed images to the following location:')
     print(imgXfadeTelOutDir)
@@ -959,7 +1504,7 @@ if cntrlEYE == 11:
     else:
         imgDivXfadeTelNm = 'divXfadeTelOut'
 
-    eye.odmkImgDivXfadeTelescope(processScaledArray, fpb, imgDivXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgDivXfadeTelNm)
+    eyeTb.odmkImgDivXfadeTelescope(processScaledArray, fpb, imgDivXfadeTelOutDir, inOut=inOrOut, imgOutNm=imgDivXfadeTelNm)
 
     print('Saved Processed images to the following location:')
     print(imgDivXfadeTelOutDir)
@@ -994,15 +1539,15 @@ elif cntrlEYE == 12:
     # generate the downFrames sequence:
     eyeDFrames = eyeClks.clkDownFrames()
     
-    numECHOES = 8
-    stepECHOES = 3
+    numECHOES = 16
+    stepECHOES = 5          # 1 or greater
     decayECHOES = 'None'
 
     # final video length in seconds
     numFrames = int(np.ceil(xLength * framesPerSec))
 
     # [eyeECHO_Bpm_Out, eyeECHO_Bpm_Nm] =  odmkEyeEchoBpm(imgSrcArray, numFrames, eyeDFrames, numECHOES, stepECHOES, imgRndBpmdir, echoDecay = decayECHOES, imgOutNm=imgRndBpmNm)
-    eye.odmkEyeEchoBpm(imgSrcArray, numFrames, eyeDFrames, numECHOES, stepECHOES, imgRndBpmdir, echoDecay = decayECHOES, imgOutNm=imgRndBpmNm)
+    eyeTb.odmkEyeEchoBpm(imgSrcArray, numFrames, eyeDFrames, numECHOES, stepECHOES, imgRndBpmdir, echoDecay = decayECHOES, imgOutNm=imgRndBpmNm)
     print('// *--------------------------------------------------------------* //')
 
 # // *********************************************************************** //
@@ -1029,7 +1574,7 @@ if cntrlEYE == 20:
     xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames    
     sLength = xLength
     
-    [xCEnOutA, xCEnOutNmA] = eye.odmkImgColorEnhance(imgSrcArray, sLength, framesPerSec, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm)
+    eyeTb.odmkImgColorEnhance(imgSrcArray, sLength, framesPerSec, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm)
 
     print('\nodmkImgColorEnhance function output => Created python lists:')
     print('<<<xCEnOutA>>>   (ndimage objects)')
@@ -1075,7 +1620,7 @@ if cntrlEYE == 21:
 
     inOrOut = 0     # telescope direction: 0 = in, 1 = out
     
-    eye.odmkImgCEnTelescope(imgSrcArray, sLength, framesPerSec, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm, inOut=inOrOut)
+    eyeTb.odmkImgCEnTelescope(imgSrcArray, sLength, framesPerSec, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm, inOut=inOrOut)
 
     print('\nodmkImgCEnTelescope function output => Created python lists:')
     print('<<<xCEnTelescOutA>>>   (ndimage objects)')
@@ -1104,50 +1649,67 @@ if cntrlEYE == 22:
 
     # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
     #eyeOutFileName = 'myOutputFileName'    # defined above
-    outXfadeNm = eyeOutFileName
+    outPxlRndRepNm = eyeOutFileName
     #eyeOutDirName = 'myOutputDirName'    # defined above
-    outXfadeDir = eyeDir+eyeOutDirName
-    os.makedirs(outXfadeDir, exist_ok=True)
+    outPxlRndRepDir = eyeDir+eyeOutDirName
+    os.makedirs(outPxlRndRepDir, exist_ok=True)
 
-    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
-    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
-    xfadeFrames = xLength
+
     sLength = xLength
 
-    inOrOut = 0     # telescope direction: 0 = in, 1 = out
     
-    eye.odmkImgCEnTelescope(imgSrcArray, sLength, framesPerSec, xfadeFrames, outXfadeDir, imgOutNm=outXfadeNm, inOut=inOrOut)
+    eyeTb.odmkPxlRndReplace(imgSrcArray, sLength, framesPerSec, outPxlRndRepDir, imgOutNm=outPxlRndRepNm)
 
-    print('\nodmkImgCEnTelescope function output => Created python lists:')
-    print('<<<xCEnTelescOutA>>>   (ndimage objects)')
-    print('<<<xCEnTelescOutNmA>>> (img names)')
 
     print('\noutput processed img to the following directory:')
-    print(outXfadeDir)
+    print(outPxlRndRepDir)
 
-    # print('\nrepeatDir function output => Created python lists:')
-    # print('<<<xfadeRepeatA>>>   (ndimage objects)')
-    # print('<<<xfadeRepeatNmA>>> (img names)')
-
-    # print('\noutput processed img to the following directory:')
-    # print(eyeDir+'eyeXfadeRepeat')
 
     print('// *--------------------------------------------------------------* //')
     
+
+if cntrlEYE == 222:
+
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE Pixel Random Rotate::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    outPxlRndRotNm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    outPxlRndRotDir = eyeDir+eyeOutDirName
+    os.makedirs(outPxlRndRotDir, exist_ok=True)
+
+
+    sLength = xLength
+
+    
+    eyeTb.odmkPxlRndRotate(imgSrcArray, sLength, framesPerSec, framesPerBeat, outPxlRndRotDir, imgOutNm=outPxlRndRotNm)
+
+
+    print('\noutput processed img to the following directory:')
+    print(outPxlRndRotDir)
+
+
+    print('// *--------------------------------------------------------------* //')
+
 
 if cntrlEYE == 23:
     
     print('\n')
     print('// *--------------------------------------------------------------* //')
-    print('// *---::ODMKEYE - EYE Dual Bipolar Oscillating telescope f::---*')
+    print('// *---::ODMKEYE - EYE LFO Modulated Parascope f::---*')
     print('// *--------------------------------------------------------------* //')
 
     # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
     #eyeOutFileName = 'myOutputFileName'    # defined above
-    bipolarTelescNm = eyeOutFileName
+    lfoParascopeNm = eyeOutFileName
     #eyeOutDirName = 'myOutputDirName'    # defined above
-    bipolarTelescDir = eyeDir+eyeOutDirName
-    os.makedirs(bipolarTelescDir, exist_ok=True)
+    lfoParascopeDir = eyeDir+eyeOutDirName
+    os.makedirs(lfoParascopeDir, exist_ok=True)
 
     #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
     #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
@@ -1158,10 +1720,10 @@ if cntrlEYE == 23:
 
     inOrOut = 0     # telescope direction: 0 = in, 1 = out
     
-    eyeTb.odmkDualBipolarTelesc(imgSrcArray, sLength, framesPerSec, xfadeFrames, bipolarTelescDir, imgOutNm=bipolarTelescNm, inOrOut=inOrOut)
+    eyeTb.odmkLfoParascope(imgSrcArray, sLength, framesPerSec, xfadeFrames, lfoParascopeDir, imgOutNm=lfoParascopeNm, inOrOut=inOrOut)
 
     print('\nProcessed images output to the following directory:')
-    print(bipolarTelescDir)
+    print(lfoParascopeDir)
 
     # print('\nrepeatDir function output => Created python lists:')
     # print('<<<xfadeRepeatA>>>   (ndimage objects)')
@@ -1171,6 +1733,7 @@ if cntrlEYE == 23:
     # print(eyeDir+'eyeXfadeRepeat')
 
     print('// *--------------------------------------------------------------* //')
+
 
 if cntrlEYE == 24:
     
@@ -1193,9 +1756,9 @@ if cntrlEYE == 24:
 
     sLength = xLength
 
-    inOrOut = 0     # telescope direction: 0 = in, 1 = out
+    #inOrOut = 1     # telescope direction: 0 = in, 1 = out
 
-    eyeTb.odmkBSlothRecurs(imgSrcArray, sLength, framesPerSec, xfadeFrames, bipolarTelescDir, imgOutNm=bipolarTelescNm, inOrOut=inOrOut)
+    eyeTb.odmkBSlothRecurs(imgSrcArray, sLength, framesPerSec, xfadeFrames, bSlothRecursDir, imgOutNm=bSlothRecursNm)
 
     print('\nProcessed images output to the following directory:')
     print(bSlothRecursDir)
@@ -1208,13 +1771,350 @@ if cntrlEYE == 24:
     # print(eyeDir+'eyeXfadeRepeat')
 
     print('// *--------------------------------------------------------------* //')
+  
 
+if cntrlEYE == 25:
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE Bananasloth Glitch 2 f::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    bSlothGlitch1Nm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    bSlothGlitch1Dir = eyeDir+eyeOutDirName
+    os.makedirs(bSlothGlitch1Dir, exist_ok=True)
+
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
+
+    sLength = xLength
+
+    #inOrOut = 1     # telescope direction: 0 = in, 1 = out
+
+    eyeTb.odmkBSlothGlitch2(imgSrcArray, sLength, framesPerSec, xfadeFrames, bSlothGlitch1Dir, imgOutNm=bSlothGlitch1Nm)
+
+    print('\nProcessed images output to the following directory:')
+    print(bSlothGlitch1Dir)
+
+    # print('\nrepeatDir function output => Created python lists:')
+    # print('<<<xfadeRepeatA>>>   (ndimage objects)')
+    # print('<<<xfadeRepeatNmA>>> (img names)')
+
+    # print('\noutput processed img to the following directory:')
+    # print(eyeDir+'eyeXfadeRepeat')
+
+    print('// *--------------------------------------------------------------* //')
+  
+    
+if cntrlEYE == 26:
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE Bananasloth Glitch 1 f::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    bSlothGlitch1Nm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    bSlothGlitch1Dir = eyeDir+eyeOutDirName
+    os.makedirs(bSlothGlitch1Dir, exist_ok=True)
+
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
+
+    sLength = xLength
+
+    #inOrOut = 1     # telescope direction: 0 = in, 1 = out
+
+    eyeTb.odmkBSlothGlitch1(imgSrcArray, sLength, framesPerSec, xfadeFrames, bSlothGlitch1Dir, imgOutNm=bSlothGlitch1Nm)
+
+    print('\nProcessed images output to the following directory:')
+    print(bSlothGlitch1Dir)
+
+    # print('\nrepeatDir function output => Created python lists:')
+    # print('<<<xfadeRepeatA>>>   (ndimage objects)')
+    # print('<<<xfadeRepeatNmA>>> (img names)')
+
+    # print('\noutput processed img to the following directory:')
+    # print(eyeDir+'eyeXfadeRepeat')
+
+    print('// *--------------------------------------------------------------* //')   
+ 
+
+if cntrlEYE == 27:
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE Bananasloth Glitch 3 f::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    bSlothGlitch1Nm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    bSlothGlitch1Dir = eyeDir+eyeOutDirName
+    os.makedirs(bSlothGlitch1Dir, exist_ok=True)
+
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
+
+    sLength = xLength
+
+    #inOrOut = 1     # telescope direction: 0 = in, 1 = out
+
+    eyeTb.odmkBSlothGlitch3(imgSrcArray, sLength, framesPerSec, xfadeFrames, bSlothGlitch1Dir, imgOutNm=bSlothGlitch1Nm)
+
+    print('\nProcessed images output to the following directory:')
+    print(bSlothGlitch1Dir)
+
+    # print('\nrepeatDir function output => Created python lists:')
+    # print('<<<xfadeRepeatA>>>   (ndimage objects)')
+    # print('<<<xfadeRepeatNmA>>> (img names)')
+
+    # print('\noutput processed img to the following directory:')
+    # print(eyeDir+'eyeXfadeRepeat')
+
+    print('// *--------------------------------------------------------------* //')
+   
+
+if cntrlEYE == 623:
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE VideoGoreXXZ01::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    fxVLfoParascopeNm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    fxVLfoParascopeDir = eyeDir+eyeOutDirName
+    os.makedirs(fxVLfoParascopeDir, exist_ok=True)
+
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
+
+    sLength = xLength
+    
+    #pdb.set_trace()
+
+
+    odmkvTb.odmkVLfoParascope(imgSeqArray, sLength, framesPerSec, xfadeFrames, fxVLfoParascopeDir, imgOutNm=fxVLfoParascopeNm)
+
+    print('\nProcessed images output to the following directory:')
+    print(fxVLfoParascopeDir)
+
+
+    print('// *--------------------------------------------------------------* //')
+
+
+    
+
+if cntrlEYE == 626:
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE FxSlothCultLife Glitch::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    fxSlothCultNm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    fxSlothCultDir = eyeDir+eyeOutDirName
+    os.makedirs(fxSlothCultDir, exist_ok=True)
+
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
+
+    sLength = xLength
+    
+    #pdb.set_trace()
+
+    #inOrOut = 1     # telescope direction: 0 = in, 1 = out
+
+    odmkvTb.odmkFxSlothCult(imgSeqArray, sLength, framesPerSec, xfadeFrames, fxSlothCultDir, imgOutNm=fxSlothCultNm)
+
+    print('\nProcessed images output to the following directory:')
+    print(fxSlothCultDir)
+
+    # print('\nrepeatDir function output => Created python lists:')
+    # print('<<<xfadeRepeatA>>>   (ndimage objects)')
+    # print('<<<xfadeRepeatNmA>>> (img names)')
+
+    # print('\noutput processed img to the following directory:')
+    # print(eyeDir+'eyeXfadeRepeat')
+
+    print('// *--------------------------------------------------------------* //')
+    
+   
+   
+if cntrlEYE == 627:
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE VideoGoreXXZ01::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    fxVideoGoreNm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    fxVideoGoreDir = eyeDir+eyeOutDirName
+    os.makedirs(fxVideoGoreDir, exist_ok=True)
+
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
+
+    sLength = xLength
+    
+    #pdb.set_trace()
+
+    #inOrOut = 1     # telescope direction: 0 = in, 1 = out
+
+    odmkvTb.odmkVideoGoreXXZ01(imgSeqArray, sLength, framesPerSec, xfadeFrames, fxVideoGoreDir, imgOutNm=fxVideoGoreNm)
+
+    print('\nProcessed images output to the following directory:')
+    print(fxVideoGoreDir)
+
+    # print('\nrepeatDir function output => Created python lists:')
+    # print('<<<xfadeRepeatA>>>   (ndimage objects)')
+    # print('<<<xfadeRepeatNmA>>> (img names)')
+
+    # print('\noutput processed img to the following directory:')
+    # print(eyeDir+'eyeXfadeRepeat')
+
+    print('// *--------------------------------------------------------------* //')
+   
+   
+if cntrlEYE == 28:
+    
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - EYE LFO Horizontal Trails f::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    # srcXfadeDir = eyeDir+'eyeSrcExp23/'    # defined above
+    #eyeOutFileName = 'myOutputFileName'    # defined above
+    lfoHtrailsNm = eyeOutFileName
+    #eyeOutDirName = 'myOutputDirName'    # defined above
+    lfoHtrailsDir = eyeDir+eyeOutDirName
+    os.makedirs(lfoHtrailsDir, exist_ok=True)
+
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat / 3)) #2 images for 2 frames
+    #xfadeFrames = int(np.ceil(eyeClks.framesPerBeat)) #2 images for 2 frames
+    xfadeFrames = framesPerBeat
+    #xfadeFrames = xLength
+
+    sLength = xLength
+
+    #inOrOut = 1     # telescope direction: 0 = in, 1 = out
+
+    eyeTb.odmkLfoHtrails(imgSrcArray, sLength, framesPerSec, xfadeFrames, lfoHtrailsDir, imgOutNm=lfoHtrailsNm)
+    print('\nProcessed images output to the following directory:')
+    print(lfoHtrailsDir)
+
+    # print('\nrepeatDir function output => Created python lists:')
+    # print('<<<xfadeRepeatA>>>   (ndimage objects)')
+    # print('<<<xfadeRepeatNmA>>> (img names)')
+
+    # print('\noutput processed img to the following directory:')
+    # print(eyeDir+'eyeXfadeRepeat')
+
+    print('// *--------------------------------------------------------------* //')
 
 # /////////////////////////////////////////////////////////////////////////////
 # #############################################################################
 # end : ODMK pixel banging
 # #############################################################################
 # \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+# /////////////////////////////////////////////////////////////////////////////
+# #############################################################################
+# begin : img pre-processing
+# #############################################################################
+# \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+
+
+if preProcess == 2:
+
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::Scale All images in SRC Directory::---*')
+    print('// *--------------------------------------------------------------* //')
+
+    ctrl = high
+
+    imgSrcArray = eyeDir+scaleSrcDir
+    
+    sclSzX = scaleSzX
+    sclSzY = scaleSzY
+    
+    # define output directory for scaled img
+    # Dir path must end with backslash /
+    processScaleDir = eyeDir+scaleOutDirName
+    os.makedirs(processScaleDir, exist_ok=True)
+    
+    # individual file root name
+    outNameRoot = scaleFileName    
+    
+
+    eyeTb.odmkScaleAll(imgSrcArray, sclSzX, sclSzY, processScaleDir, high=ctrl, outName=outNameRoot)
+
+
+    print('Saved Scaled images to the following location:')
+    print(processScaleDir)
+    print('\n')
+
+
+
+elif preProcess == 3:
+
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::Convert All images in SRC Directory to bmp::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    imgSrcDir = eyeDir+jpgSrcDir
+    
+    
+    # define output directory for scaled img
+    # Dir path must end with backslash /
+    imgOutDir = eyeDir+bmpOutDirName
+    os.makedirs(imgOutDir, exist_ok=True)
+    
+    # individual file root name
+    outNameRoot = bmpOutFileName    
+    
+
+    eye.convertJPGtoBMP(imgSrcDir, imgOutDir, reName=outNameRoot)
+
+
+    print('Saved converted images to the following location:')
+    print(imgOutDir)
+    print('\n')
+
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -1246,6 +2146,7 @@ if postProcess == 1:
 
     eye.repeatAllImg(srcDir, n, w=1, repeatDir=repeatDir, repeatName=repeatNm)
 
+
 elif postProcess == 2:
     print('\n')
     print('// *--------------------------------------------------------------* //')
@@ -1275,45 +2176,174 @@ elif postProcess == 2:
 # // *********************************************************************** //
 # // *********************************************************************** //
 
-# ***GOOD***
 
-# *-----BYPASS BEGIN-----*
+elif postProcess == 3:
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::Concatenate all images in directory list::---*')
+    print('// *--------------------------------------------------------------* //')
 
-#print('\n')
-#print('// *--------------------------------------------------------------* //')
-#print('// *---::Concatenate all images in directory list::---*')
-#print('// *--------------------------------------------------------------* //')
-#
-#
-#loc1 = eyeDir+'uCache/imgTelescopeIn1_1436x888_56x/'
-#loc2 = eyeDir+'uCache/imgTelescopeIn2_1436x888_56x/'
-#loc3 = eyeDir+'uCache/imgTelescopeIn3_1436x888_56x/'
-#loc4 = eyeDir+'uCache/imgTelescopeIn4_1436x888_56x/'
-#
-#dirList = [loc1, loc2, loc3, loc4]
-#
-#gorgulanConcatDir = eyeDir+'gorgulanConcatExp/'
-#os.makedirs(concatDir, exist_ok=True)
-#reName = 'gorgulanConcat'
-#
-## function:  concatAllDir(dirList, w=0, concatDir='None', concatName='None')
-## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList)
-## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=0, concatName=reName)
-## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=0, concatDir=gorgulanConcatDir)
-## [gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=1, concatDir=gorgulanConcatDir)
-#[gorgulanObjList, gorgulanSrcList] = concatAllDir(dirList, w=1, concatDir=gorgulanConcatDir, concatName=reName)
-#
-#print('\nFound '+str(len(gorgulanSrcList))+' images in the directory list\n')
-#print('\nCreated python lists of ndimage objects:')
-#print('<<gorgulanObjList>> (img data objects) and <<gorgulanSrcList>> (img names)\n')
-#
-#print('// *--------------------------------------------------------------* //')
+    # ex. defined above: concatDirList = [loc1, loc2, loc3, loc4, loc5, loc6, loc7, loc8]
+    dirList = concatDirList
+    reName = concatReName
+    
+    eyeConcatDir = eyeDir+concatOutDir
+    os.makedirs(eyeConcatDir, exist_ok=True)
+    
+    
+    eyeTb.concatAllDir(dirList, eyeConcatDir, reName)
+    
+    print('\nOutput all images to: '+eyeConcatDir)
+    
+    print('// *--------------------------------------------------------------* //')
 
-# *-----BYPASS END-----*
+
 
 # // *********************************************************************** //
 # // *********************************************************************** //
 # // *********************************************************************** //
+
+
+elif postProcess == 4:
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - mirrorHV4 list of files in directory::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    srcDir = eyeDir+mirrorHV4SrcDir   
+    
+    mirrorHV4Nm = mirrorHV4ReName
+    
+    mirrorHV4Dir = eyeDir+mirrorHV4OutDir
+    os.makedirs(mirrorHV4Dir, exist_ok=True)
+    
+    outSzX = 1920
+    outSzY = 1080
+    
+    ctrlQuadrant = ctrlQ
+
+    
+    eyeTb.mirrorHV4AllImg(srcDir, outSzX, outSzY, mirrorHV4Dir, mirrorHV4Nm, ctrl=ctrlQuadrant)    
+    print('\nOutput all images to: '+mirrorHV4Dir)
+    
+    print('// *--------------------------------------------------------------* //')
+
+
+
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+
+elif postProcess == 5:
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - mirrorTemporalHV4 list of files in directory::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    srcDir = eyeDir+mirrorTemporalHV4SrcDir   
+    
+    mirrorTemporalHV4Nm = mirrorTemporalHV4ReName
+    
+    mirrorTemporalHV4Dir = eyeDir+mirrorTemporalHV4OutDir
+    os.makedirs(mirrorTemporalHV4Dir, exist_ok=True)
+    
+    outSzX = 1920
+    outSzY = 1080
+    
+    ctrlQuadrant = ctrlQ
+    frameDly = ctrlDly
+
+    
+    eyeTb.mirrorTemporalHV4AllImg(srcDir, outSzX, outSzY, mirrorTemporalHV4Dir, mirrorTemporalHV4Nm, frameDly, ctrl=ctrlQuadrant)    
+    print('\nOutput all images to: '+mirrorTemporalHV4Dir)
+    
+    print('// *--------------------------------------------------------------* //')
+
+
+
+# // *********************************************************************** //
+# // *********************************************************************** //
+# // *********************************************************************** //
+
+
+elif postProcess == 6:
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - imgInterlaceDir interlace files in directories::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    srcDir1 = eyeDir+imgInterlaceSrcDir1
+    srcDir2 = eyeDir+imgInterlaceSrcDir2
+    
+    interlaceNm = imgInterlaceReName
+    
+    imgInterlaceDir = eyeDir+imgInterlaceOutDir
+    os.makedirs(imgInterlaceDir, exist_ok=True)
+
+    
+
+    eyeTb.imgInterlaceDir(srcDir1, srcDir2, imgInterlaceDir, reName=interlaceNm)    
+    print('\nOutput all images to: '+imgInterlaceDir)
+    
+    print('// *--------------------------------------------------------------* //')
+
+
+
+elif postProcess == 7:
+    print('\n')
+    print('// *--------------------------------------------------------------* //')
+    print('// *---::ODMKEYE - imgXfadeDir interlace files in directories::---*')
+    print('// *--------------------------------------------------------------* //')
+
+
+    srcDir1 = eyeDir+imgXfadeSrcDir1
+    srcDir2 = eyeDir+imgXfadeSrcDir2
+    
+    XfadeNm = imgXfadeReName
+    
+    imgXfadeDir = eyeDir+imgXfadeOutDir
+    os.makedirs(imgXfadeDir, exist_ok=True)
+
+
+    # get length from shortest img dir
+    imgFileList1 = []
+    imgFileList2 = []
+    
+    if imgFormat=='fjpg':
+        imgFileList1.extend(sorted(glob.glob(srcDir1+'*.jpg')))
+        imgFileList2.extend(sorted(glob.glob(srcDir2+'*.jpg')))    
+    elif imgFormat=='fbmp':
+        imgFileList1.extend(sorted(glob.glob(srcDir1+'*.bmp')))
+        imgFileList2.extend(sorted(glob.glob(srcDir2+'*.bmp')))     
+
+    imgCount = 2*min(len(imgFileList1), len(imgFileList2))
+
+    tbWavGen = wavGen.odmkWavGen1(imgCount, fs)
+
+
+    secondsPerBeat = eyeClks.spb
+
+
+    pwmOutFreq = 20000*secondsPerBeat
+    pwmCtrlFreq = 1000*secondsPerBeat
+    phaseInc = pwmOutFreq/fs
+
+    pulseWidthCtrl = 0.5*tbWavGen.monosin(pwmCtrlFreq) + 0.5
+
+    pwmOut = np.zeros([imgCount])
+
+    for i in range(imgCount):
+        pwmOut[i] = tbWavGen.pulseWidthMod(phaseInc, pulseWidthCtrl[i])
+
+    eyeTb.imgXfadeDir(srcDir1, srcDir2, pwmOut, imgXfadeDir, reName=XfadeNm)    
+    print('\nOutput all images to: '+imgXfadeDir)
+    
+    print('// *--------------------------------------------------------------* //')
 
 
 # *-----BYPASS BEGIN-----*
